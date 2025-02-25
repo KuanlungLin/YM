@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculator</title>
+    <title>OOG Cost Calculator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,75 +12,90 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background-color: #EDE4D9; /* 大地色背景 - 淺米色 */
         }
         .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            width: 400px;
+            background-color: #F9F6F1; /* 大地色容器 - 更淺的米白 */
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 450px; /* 畫面放大到 450px */
             position: relative;
+        }
+        h1 {
+            font-size: 25px; /* 原 24pt 增加 1pt */
+            color: #2C3E50; /* 深藍色標題 */
+            margin: 0 0 15px 0;
+            text-align: center;
         }
         textarea {
             width: 100%;
-            height: 100px;
-            margin-bottom: 10px;
-            padding: 5px;
+            height: 120px; /* 輸入框高度稍加大 */
+            margin-bottom: 15px;
+            padding: 8px;
             box-sizing: border-box;
+            border: 1px solid #8D5524; /* 大地色邊框 - 深棕 */
+            border-radius: 4px;
+            background-color: #FFF;
         }
         button {
             width: 100%;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
+            padding: 12px;
+            background-color: #2C3E50; /* 深藍色按鈕 */
+            color: #F9F6F1; /* 米白文字 */
             border: none;
             border-radius: 4px;
             cursor: pointer;
             margin: 5px 0;
+            font-size: 16px;
         }
         button:hover {
-            background-color: #45a049;
+            background-color: #34495E; /* 深藍色懸停 */
         }
         pre {
-            background-color: #f8f8f8;
-            padding: 10px;
+            background-color: #EDE4D9; /* 大地色結果背景 */
+            padding: 12px;
             border-radius: 4px;
             white-space: pre-wrap;
-            margin-top: 10px;
-            margin-bottom: 10px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #8D5524; /* 大地色邊框 */
+            color: #2C3E50; /* 深藍色文字 */
         }
         #copyButton {
-            background-color: #008CBA;
+            background-color: #8D5524; /* 大地色複製按鈕 - 深棕 */
         }
         #copyButton:hover {
-            background-color: #007bb5;
+            background-color: #A66A38; /* 深棕懸停 */
         }
         #copyMessage {
             position: absolute;
-            top: 10px;
+            top: -40px; /* 上移到容器頂部上方 */
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 5px 10px;
+            background-color: rgba(44, 62, 80, 0.8); /* 深藍色半透明 */
+            color: #F9F6F1; /* 米白文字 */
+            padding: 6px 12px;
             border-radius: 4px;
             display: none;
         }
         #langSwitch {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 15px;
+            right: 15px;
         }
         #langSwitch select {
-            padding: 5px;
+            padding: 6px;
             border-radius: 4px;
+            border: 1px solid #8D5524; /* 大地色邊框 */
+            background-color: #FFF;
+            color: #2C3E50; /* 深藍色文字 */
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 id="title">Input Data</h2>
+        <h1>OOG Cost Calculator</h1>
         <div id="langSwitch">
             <select onchange="switchLanguage(this.value)">
                 <option value="en">English</option>
@@ -98,7 +113,6 @@
     <script>
         const translations = {
             en: {
-                title: "Input Data",
                 placeholder: "Please enter data, e.g., VC=519.05, EC=-396.79, COMMISSION=29.09",
                 calcButton: "Calculate",
                 copyButton: "Copy",
@@ -106,15 +120,13 @@
                 copyFail: "Copy failed, please copy manually"
             },
             zh: {
-                title: "輸入資料",
                 placeholder: "請貼上資料，例如：VC=519.05, EC=-396.79, COMMISSION=29.09",
                 calcButton: "計算",
-                copyButton: "一鍵複製",
+                copyButton: "複製",
                 copySuccess: "結果已複製到剪貼簿！",
                 copyFail: "複製失敗，請手動複製"
             },
             de: {
-                title: "Daten eingeben",
                 placeholder: "Bitte Daten einfügen, z.B.: VC=519.05, EC=-396.79, COMMISSION=29.09",
                 calcButton: "Berechnen",
                 copyButton: "Kopieren",
@@ -124,15 +136,13 @@
         };
 
         function switchLanguage(lang) {
-            document.getElementById('title').textContent = translations[lang].title;
             document.getElementById('inputData').placeholder = translations[lang].placeholder;
             document.getElementById('calcButton').textContent = translations[lang].calcButton;
             document.getElementById('copyButton').textContent = translations[lang].copyButton;
             document.getElementById('copyMessage').textContent = translations[lang].copySuccess;
-            localStorage.setItem('language', lang); // 儲存語言選擇
+            localStorage.setItem('language', lang);
         }
 
-        // 預設語言為英文
         window.onload = function() {
             const savedLang = localStorage.getItem('language') || 'en';
             document.getElementById('langSwitch').value = savedLang;
