@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OOG Cost Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #EDE4D9; /* 大地色背景 - 淺米色 */
+        }
+        .container {
+            background-color: #F9F6F1; /* 大地色容器 - 更淺的米白 */
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 450px; /* 畫面放大到 450px */
+            position: relative;
+        }
+        h1 {
+            font-size: 25px; /* 原 24pt 增加 1pt */
+            color: #2C3E50; /* 深藍色標題 */
+            margin: 0 0 15px 0;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            height: 120px; /* 輸入框高度稍加大 */
+            margin-bottom: 15px;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #8D5524; /* 大地色邊框 - 深棕 */
+            border-radius: 4px;
+            background-color: #FFF;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2C3E50; /* 深藍色按鈕 */
+            color: #F9F6F1; /* 米白文字 */
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 0;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #34495E; /* 深藍色懸停 */
+        }
+        pre {
+            background-color: #EDE4D9; /* 大地色結果背景 */
+            padding: 12px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #8D5524; /* 大地色邊框 */
+            color: #2C3E50; /* 深藍色文字 */
+        }
+        #copyButton {
+            background-color: #8D5524; /* 大地色複製按鈕 - 深棕 */
+        }
+        #copyButton:hover {
+            background-color: #A66A38; /* 深棕懸停 */
+        }
+        #copyMessage {
+            position: absolute;
+            top: -40px; /* 上移到容器頂部上方 */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(44, 62, 80, 0.8); /* 深藍色半透明 */
+            color: #F9F6F1; /* 米白文字 */
+            padding: 6px 12px;
+            border-radius: 4px;
+            display: none;
+        }
+        #langSwitch {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+        #langSwitch select {
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid #8D5524; /* 大地色邊框 */
+            background-color: #FFF;
+            color: #2C3E50; /* 深藍色文字 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OOG Cost Calculator</h1>
+        <div id="langSwitch">
+            <select onchange="switchLanguage(this.value)">
+                <option value="en">English</option>
+                <option value="zh">繁體中文</option>
+                <option value="de">Deutsch</option>
+            </select>
+        </div>
+        <textarea id="inputData" placeholder="Please enter data, e.g., VC=519.05, EC=-396.79, COMMISSION=29.09"></textarea>
+        <button onclick="calculate()" id="calcButton">Calculate</button>
+        <pre id="result"></pre>
+        <button id="copyButton" onclick="copyResult()" style="display: none;">Copy</button>
+        <div id="copyMessage">Results copied to clipboard!</div>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                placeholder: "Please enter data, e.g., VC=519.05, EC=-396.79, COMMISSION=29.09",
+                calcButton: "Calculate",
+                copyButton: "Copy",
+                copySuccess: "Results copied to clipboard!",
+                copyFail: "Copy failed, please copy manually"
+            },
+            zh: {
+                placeholder: "請貼上資料，例如：VC=519.05, EC=-396.79, COMMISSION=29.09",
+                calcButton: "計算",
+                copyButton: "複製",
+                copySuccess: "結果已複製到剪貼簿！",
+                copyFail: "複製失敗，請手動複製"
+            },
+            de: {
+                placeholder: "Bitte Daten einfügen, z.B.: VC=519.05, EC=-396.79, COMMISSION=29.09",
+                calcButton: "Berechnen",
+                copyButton: "Kopieren",
+                copySuccess: "Ergebnisse in die Zwischenablage kopiert!",
+                copyFail: "Kopieren fehlgeschlagen, bitte manuell kopieren"
+            }
+        };
+
+        function switchLanguage(lang) {
+            document.getElementById('inputData').placeholder = translations[lang].placeholder;
+            document.getElementById('calcButton').textContent = translations[lang].calcButton;
+            document.getElementById('copyButton').textContent = translations[lang].copyButton;
+            document.getElementById('copyMessage').textContent = translations[lang].copySuccess;
+            localStorage.setItem('language', lang);
+        }
+
+        window.onload = function() {
+            const savedLang = localStorage.getItem('language') || 'en';
+            document.getElementById('langSwitch').value = savedLang;
+            switchLanguage(savedLang);
+        };
+
+        function calculate() {
+            const input = document.getElementById('inputData').value;
+            const groups = input.split('\t');
+            let results = [];
+
+            groups.forEach(group => {
+                if (group.trim() === '') return;
+                let sum = 0;
+
+                const parts = group.split(/\s+/);
+                parts.forEach(part => {
+                    const [key, value] = part.split('=');
+                    if (value) {
+                        const num = parseFloat(value);
+                        if (!isNaN(num)) sum += num;
+                    }
+                });
+
+                if (sum !== 0 || group.includes('=0')) {
+                    const roundedSum = Math.ceil(sum * 100) / 100;
+                    results.push(roundedSum.toFixed(2));
+                }
+            });
+
+            const resultElement = document.getElementById('result');
+            resultElement.textContent = results.join('\n');
+            
+            const copyButton = document.getElementById('copyButton');
+            if (results.length > 0) {
+                copyButton.style.display = 'block';
+            } else {
+                copyButton.style.display = 'none';
+            }
+        }
+
+        function copyResult() {
+            const resultText = document.getElementById('result').textContent;
+            const currentLang = document.getElementById('langSwitch').value;
+            navigator.clipboard.writeText(resultText)
+                .then(() => {
+                    const copyMessage = document.getElementById('copyMessage');
+                    copyMessage.textContent = translations[currentLang].copySuccess;
+                    copyMessage.style.display = 'block';
+                    setTimeout(() => {
+                        copyMessage.style.display = 'none';
+                    }, 1000);
+                })
+                .catch(err => {
+                    const copyMessage = document.getElementById('copyMessage');
+                    copyMessage.textContent = translations[currentLang].copyFail;
+                    copyMessage.style.display = 'block';
+                    setTimeout(() => {
+                        copyMessage.style.display = 'none';
+                    }, 1000);
+                });
+        }
+    </script>
+</body>
+</html>
