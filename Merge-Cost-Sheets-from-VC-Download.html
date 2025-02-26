@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Merge Cost Sheets from VC Download</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #F5F1E9;
+            color: #2C3E50;
+            text-align: center;
+            padding: 40px;
+            margin: 0;
+        }
+        h1 {
+            color: #8B4513;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: #FFFFFF;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+        input[type="file"], button {
+            display: block;
+            margin: 15px auto;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input[type="file"] {
+            background-color: #D2B48C;
+            color: #2C3E50;
+            cursor: pointer;
+        }
+        button {
+            background-color: #2C3E50;
+            color: #FFFFFF;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #34495E;
+        }
+        #fileList, #status {
+            margin-top: 20px;
+            color: #2C3E50;
+            font-size: 14px;
+        }
+        #fileList ul {
+            list-style: none;
+            padding: 0;
+        }
+        #fileList li {
+            background-color: #ECE5DD;
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        #langSwitch {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        #langSwitch select {
+            padding: 5px;
+            border-radius: 5px;
+            background-color: #F0E6D2; /* 改為更淡的大地色 */
+            color: #2C3E50;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="langSwitch">
+            <select id="language" onchange="changeLanguage()">
+                <option value="en">English</option>
+                <option value="zh-TW">繁體中文</option>
+                <option value="de">Deutsch</option>
+            </select>
+        </div>
+        <h1 id="title">Merge Cost Sheets from VC Download</h1>
+        <input type="file" id="csvFiles" multiple accept=".csv" onchange="displayFileNames()">
+        <button id="processBtn" onclick="processFiles()">Process and Download</button>
+        <div id="fileList"></div>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        const translations = {
+            "en": {
+                "processBtn": "Process and Download",
+                "fileListTitle": "Uploaded Files:",
+                "noFilesAlert": "Please select at least one CSV file!",
+                "processing": "Processing...",
+                "cancelDownload": "Download canceled",
+                "complete": "Processing complete, file downloaded: ",
+                "promptFileName": "Please enter the download file name (without extension):"
+            },
+            "zh-TW": {
+                "processBtn": "處理並下載",
+                "fileListTitle": "已上傳檔案：",
+                "noFilesAlert": "請選擇至少一個CSV檔案！",
+                "processing": "處理中...",
+                "cancelDownload": "已取消下載",
+                "complete": "處理完成，已下載檔案：",
+                "promptFileName": "請輸入下載檔案名稱（不含副檔名）："
+            },
+            "de": {
+                "processBtn": "Verarbeiten und herunterladen",
+                "fileListTitle": "Hochgeladene Dateien:",
+                "noFilesAlert": "Bitte wählen Sie mindestens eine CSV-Datei aus!",
+                "processing": "Wird verarbeitet...",
+                "cancelDownload": "Download abgebrochen",
+                "complete": "Verarbeitung abgeschlossen, Datei heruntergeladen: ",
+                "promptFileName": "Bitte geben Sie den Namen der Download-Datei ein (ohne Erweiterung):"
+            }
+        };
+
+        let currentLang = "en"; // 預設語言為英文
+
+        function changeLanguage() {
+            currentLang = document.getElementById('language').value;
+            document.getElementById('processBtn').textContent = translations[currentLang].processBtn;
+            displayFileNames(); // 更新檔案列表標題
+        }
+
+        function displayFileNames() {
+            const files = document.getElementById('csvFiles').files;
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = `<h3>${translations[currentLang].fileListTitle}</h3><ul>` + 
+                Array.from(files).map(file => `<li>${file.name}</li>`).join('') + 
+                '</ul>';
+        }
+
+        function processFiles() {
+            const files = document.getElementById('csvFiles').files;
+            const status = document.getElementById('status');
+            status.textContent = translations[currentLang].processing;
+
+            if (files.length === 0) {
+                alert(translations[currentLang].noFilesAlert);
+                status.textContent = "";
+                return;
+            }
+
+            let allData = [];
+            let maxColumns = 0;
+            let firstFileHeaders = [];
+
+            function processFile(file, index, callback) {
+                Papa.parse(file, {
+                    complete: function(result) {
+                        const lines = result.data;
+                        if (lines.length < 2) {
+                            callback([]);
+                            return;
+                        }
+
+                        const headers = lines.slice(0, 2);
+                        const data = lines.slice(2);
+
+                        headers.forEach(row => {
+                            maxColumns = Math.max(maxColumns, row.length);
+                            if (index === 0) firstFileHeaders.push(row);
+                        });
+                        data.forEach(row => {
+                            maxColumns = Math.max(maxColumns, row.length);
+                        });
+
+                        callback(data);
+                    },
+                    skipEmptyLines: true,
+                    encoding: "UTF-8"
+                });
+            }
+
+            let processedFiles = 0;
+            for (let i = 0; i < files.length; i++) {
+                processFile(files[i], i, (fileData) => {
+                    allData = allData.concat(fileData);
+                    processedFiles++;
+
+                    if (processedFiles === files.length) {
+                        const normalizedHeaders = firstFileHeaders.map(header => {
+                            if (header.length < maxColumns) {
+                                return header.concat(Array(maxColumns - header.length).fill(''));
+                            } else if (header.length > maxColumns) {
+                                return header.slice(0, maxColumns);
+                            }
+                            return header;
+                        });
+
+                        const normalizedData = allData.map(row => {
+                            if (row.length < maxColumns) {
+                                return row.concat(Array(maxColumns - row.length).fill(''));
+                            } else if (row.length > maxColumns) {
+                                return row.slice(0, maxColumns);
+                            }
+                            return row;
+                        });
+
+                        const finalData = normalizedHeaders.concat(normalizedData);
+
+                        const fileName = prompt(translations[currentLang].promptFileName, "merged_cost_sheets");
+                        if (fileName === null) {
+                            status.textContent = translations[currentLang].cancelDownload;
+                            return;
+                        }
+                        const finalFileName = fileName.trim() ? `${fileName}.xlsx` : "merged_cost_sheets.xlsx";
+
+                        const wb = XLSX.utils.book_new();
+                        const ws = XLSX.utils.aoa_to_sheet(finalData);
+                        XLSX.utils.book_append_sheet(wb, ws, "Merged");
+                        XLSX.writeFile(wb, finalFileName);
+
+                        status.textContent = `${translations[currentLang].complete}${finalFileName}`;
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
