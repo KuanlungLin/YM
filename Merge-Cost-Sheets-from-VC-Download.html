@@ -49,6 +49,12 @@
         button:hover {
             background-color: #34495E;
         }
+        #clearBtn {
+            background-color: #8B4513;
+        }
+        #clearBtn:hover {
+            background-color: #A0522D;
+        }
         #fileList, #status {
             margin-top: 20px;
             color: #2C3E50;
@@ -63,6 +69,18 @@
             margin: 5px 0;
             padding: 8px;
             border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #fileList li button {
+            background-color: #A0522D;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin: 0;
+        }
+        #fileList li button:hover {
+            background-color: #CD5C5C;
         }
         #langSwitch {
             position: absolute;
@@ -72,7 +90,7 @@
         #langSwitch select {
             padding: 5px;
             border-radius: 5px;
-            background-color: #F0E6D2; /* 改為更淡的大地色 */
+            background-color: #F0E6D2;
             color: #2C3E50;
             border: none;
         }
@@ -88,8 +106,9 @@
             </select>
         </div>
         <h1 id="title">Merge Cost Sheets from VC Download</h1>
-        <input type="file" id="csvFiles" multiple accept=".csv" onchange="displayFileNames()">
+        <input type="file" id="csvFiles" multiple accept=".csv" onchange="updateFileList()">
         <button id="processBtn" onclick="processFiles()">Process and Download</button>
+        <button id="clearBtn" onclick="clearFiles()">Clear All Files</button>
         <div id="fileList"></div>
         <p id="status"></p>
     </div>
@@ -98,6 +117,8 @@
         const translations = {
             "en": {
                 "processBtn": "Process and Download",
+                "clearBtn": "Clear All Files",
+                "deleteBtn": "Delete",
                 "fileListTitle": "Uploaded Files:",
                 "noFilesAlert": "Please select at least one CSV file!",
                 "processing": "Processing...",
@@ -107,6 +128,8 @@
             },
             "zh-TW": {
                 "processBtn": "處理並下載",
+                "clearBtn": "清除所有檔案",
+                "deleteBtn": "刪除",
                 "fileListTitle": "已上傳檔案：",
                 "noFilesAlert": "請選擇至少一個CSV檔案！",
                 "processing": "處理中...",
@@ -116,6 +139,8 @@
             },
             "de": {
                 "processBtn": "Verarbeiten und herunterladen",
+                "clearBtn": "Alle Dateien löschen",
+                "deleteBtn": "Löschen",
                 "fileListTitle": "Hochgeladene Dateien:",
                 "noFilesAlert": "Bitte wählen Sie mindestens eine CSV-Datei aus!",
                 "processing": "Wird verarbeitet...",
@@ -125,28 +150,51 @@
             }
         };
 
-        let currentLang = "en"; // 預設語言為英文
+        let currentLang = "en";
+        let uploadedFiles = []; // 儲存已上傳的檔案
 
         function changeLanguage() {
             currentLang = document.getElementById('language').value;
             document.getElementById('processBtn').textContent = translations[currentLang].processBtn;
-            displayFileNames(); // 更新檔案列表標題
+            document.getElementById('clearBtn').textContent = translations[currentLang].clearBtn;
+            displayFileNames();
+        }
+
+        function updateFileList() {
+            const files = document.getElementById('csvFiles').files;
+            if (files.length > 0) {
+                uploadedFiles = uploadedFiles.concat(Array.from(files)); // 追加新檔案
+                document.getElementById('csvFiles').value = ''; // 清空輸入框以允許重複上傳
+            }
+            displayFileNames();
         }
 
         function displayFileNames() {
-            const files = document.getElementById('csvFiles').files;
             const fileList = document.getElementById('fileList');
-            fileList.innerHTML = `<h3>${translations[currentLang].fileListTitle}</h3><ul>` + 
-                Array.from(files).map(file => `<li>${file.name}</li>`).join('') + 
-                '</ul>';
+            fileList.innerHTML = uploadedFiles.length > 0 ?
+                `<h3>${translations[currentLang].fileListTitle}</h3><ul>` + 
+                uploadedFiles.map((file, index) => 
+                    `<li>${file.name} <button onclick="deleteFile(${index})">${translations[currentLang].deleteBtn}</button></li>`
+                ).join('') + '</ul>' : '';
+        }
+
+        function clearFiles() {
+            uploadedFiles = [];
+            document.getElementById('csvFiles').value = '';
+            displayFileNames();
+            document.getElementById('status').textContent = '';
+        }
+
+        function deleteFile(index) {
+            uploadedFiles.splice(index, 1); // 移除指定檔案
+            displayFileNames();
         }
 
         function processFiles() {
-            const files = document.getElementById('csvFiles').files;
             const status = document.getElementById('status');
             status.textContent = translations[currentLang].processing;
 
-            if (files.length === 0) {
+            if (uploadedFiles.length === 0) {
                 alert(translations[currentLang].noFilesAlert);
                 status.textContent = "";
                 return;
@@ -184,12 +232,12 @@
             }
 
             let processedFiles = 0;
-            for (let i = 0; i < files.length; i++) {
-                processFile(files[i], i, (fileData) => {
+            for (let i = 0; i < uploadedFiles.length; i++) {
+                processFile(uploadedFiles[i], i, (fileData) => {
                     allData = allData.concat(fileData);
                     processedFiles++;
 
-                    if (processedFiles === files.length) {
+                    if (processedFiles === uploadedFiles.length) {
                         const normalizedHeaders = firstFileHeaders.map(header => {
                             if (header.length < maxColumns) {
                                 return header.concat(Array(maxColumns - header.length).fill(''));
