@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Format Upload Sheet for VC Download</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #F5F1E9;
+            color: #2C3E50;
+            text-align: center;
+            padding: 40px;
+            margin: 0;
+        }
+        h1 {
+            color: #8B4513;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: #FFFFFF;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+        input[type="file"], button {
+            display: block;
+            margin: 15px auto;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input[type="file"] {
+            background-color: #D2B48C;
+            color: #2C3E50;
+            cursor: pointer;
+        }
+        button {
+            background-color: #2C3E50;
+            color: #FFFFFF;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #34495E;
+        }
+        #clearBtn {
+            background-color: #8B4513;
+        }
+        #clearBtn:hover {
+            background-color: #A0522D;
+        }
+        #fileList, #status {
+            margin-top: 20px;
+            color: #2C3E50;
+            font-size: 14px;
+        }
+        #langSwitch {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        #langSwitch select, #reeferInput {
+            padding: 5px;
+            border-radius: 5px;
+            background-color: #F0E6D2;
+            color: #2C3E50;
+            border: none;
+        }
+        #repoDateInput {
+            background-color: #F0E6D2;
+            color: #2C3E50;
+            width: 120px;
+        }
+        .input-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .input-row label {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="langSwitch">
+            <select id="language" onchange="changeLanguage()">
+                <option value="en">English</option>
+                <option value="zh-TW">繁體中文</option>
+                <option value="de">Deutsch</option>
+            </select>
+        </div>
+        <h1 id="title">Format Upload Sheet for VC Download</h1>
+        <input type="file" id="excelFile" accept=".xlsx" onchange="updateFileList()">
+        <div class="input-row">
+            <label for="reeferInput">Reefer:</label>
+            <select id="reeferInput">
+                <option value="N" selected>N</option>
+                <option value="Y">Y</option>
+            </select>
+        </div>
+        <div class="input-row">
+            <label for="repoDateInput">Repo Eff Date (YYYY.MM.DD):</label>
+            <input type="text" id="repoDateInput" maxlength="10" placeholder="e.g., 2025.02.26">
+        </div>
+        <button id="processBtn" onclick="processFile()">Process and Download</button>
+        <button id="clearBtn" onclick="clearFile()">Clear File</button>
+        <div id="fileList"></div>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        const translations = {
+            "en": {
+                "processBtn": "Process and Download",
+                "clearBtn": "Clear File",
+                "fileListTitle": "Uploaded File:",
+                "noFileAlert": "Please select an Excel (.xlsx) file!",
+                "processing": "Processing...",
+                "complete": "Processing complete, file downloaded: ",
+                "invalidDateAlert": "Please enter a valid date in YYYY.MM.DD format!"
+            },
+            "zh-TW": {
+                "processBtn": "處理並下載",
+                "clearBtn": "清除檔案",
+                "fileListTitle": "已上傳檔案：",
+                "noFileAlert": "請選擇一個Excel (.xlsx) 檔案！",
+                "processing": "處理中...",
+                "complete": "處理完成，已下載檔案：",
+                "invalidDateAlert": "請輸入有效的日期，格式為 YYYY.MM.DD！"
+            },
+            "de": {
+                "title": "Excel-Datei verarbeiten",
+                "processBtn": "Verarbeiten und herunterladen",
+                "clearBtn": "Datei löschen",
+                "fileListTitle": "Hochgeladene Datei:",
+                "noFileAlert": "Bitte wählen Sie eine Excel-Datei (.xlsx) aus!",
+                "processing": "Wird verarbeitet...",
+                "complete": "Verarbeitung abgeschlossen, Datei heruntergeladen: ",
+                "invalidDateAlert": "Bitte geben Sie ein gültiges Datum im Format YYYY.MM.DD ein!"
+            }
+        };
+
+        let currentLang = "en";
+        let uploadedFile = null;
+
+        function changeLanguage() {
+            currentLang = document.getElementById('language').value;
+            document.getElementById('processBtn').textContent = translations[currentLang].processBtn;
+            document.getElementById('clearBtn').textContent = translations[currentLang].clearBtn;
+            displayFileName();
+        }
+
+        function updateFileList() {
+            const file = document.getElementById('excelFile').files[0];
+            if (file) {
+                uploadedFile = file;
+                displayFileName();
+            }
+        }
+
+        function displayFileName() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = uploadedFile ?
+                `<h3>${translations[currentLang].fileListTitle}</h3><p>${uploadedFile.name}</p>` : '';
+        }
+
+        function clearFile() {
+            uploadedFile = null;
+            document.getElementById('excelFile').value = '';
+            document.getElementById('reeferInput').value = 'N';
+            document.getElementById('repoDateInput').value = '';
+            displayFileName();
+            document.getElementById('status').textContent = '';
+        }
+
+        // 自動添加日期分隔符
+        document.getElementById('repoDateInput').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // 只保留數字
+            if (value.length > 4 && value.length <= 6) {
+                value = value.slice(0, 4) + '.' + value.slice(4);
+            } else if (value.length > 6) {
+                value = value.slice(0, 4) + '.' + value.slice(4, 6) + '.' + value.slice(6, 8);
+            }
+            e.target.value = value;
+        });
+
+        function isValidDateFormat(dateStr) {
+            const regex = /^\d{4}\.\d{2}\.\d{2}$/;
+            if (!regex.test(dateStr)) return false;
+            const [year, month, day] = dateStr.split('.').map(Number);
+            const date = new Date(year, month - 1, day);
+            return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+        }
+
+        function processFile() {
+            const status = document.getElementById('status');
+            status.textContent = translations[currentLang].processing;
+
+            if (!uploadedFile) {
+                alert(translations[currentLang].noFileAlert);
+                status.textContent = "";
+                return;
+            }
+
+            const reeferInput = document.getElementById('reeferInput').value;
+            const reeferValue = reeferInput === 'Y' ? 'Y' : ''; // N 填空白
+            const repoDateValue = document.getElementById('repoDateInput').value.trim();
+            if (repoDateValue && !isValidDateFormat(repoDateValue)) {
+                alert(translations[currentLang].invalidDateAlert);
+                status.textContent = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                
+                // 將工作表轉換為陣列，保留所有行（包括空白行）
+                let jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                
+                // 移除第一行與最後兩行
+                if (jsonData.length > 3) {
+                    jsonData = jsonData.slice(1);       // 移除第一行
+                    jsonData = jsonData.slice(0, -1);   // 移除最後一行
+                    jsonData = jsonData.slice(0, -1);   // 再次移除最後一行
+                } else {
+                    jsonData = []; // 如果行數不足，輸出空數據
+                }
+                
+                // 只保留第一欄並以"-"分割
+                let processedData = jsonData.map(row => {
+                    const firstColumn = row[0] ? String(row[0]).split('-') : [''];
+                    return firstColumn;
+                });
+
+                // 在最頂端新增標頭行
+                const headerRow = ['From', 'To', 'From Term', 'To Term', 'Reefer', 'Repo Eff Date', 'Case Id', 'SOC'];
+                let finalData = [headerRow].concat(processedData);
+
+                // 從第2行開始，填入 "PIER", "Reefer", 和 "Repo Eff Date"，直到第1欄為空白
+                for (let i = 1; i < finalData.length; i++) {
+                    if (!finalData[i][0] || finalData[i][0].trim() === '') {
+                        break; // 如果第1欄空白，停止填寫
+                    }
+                    finalData[i][2] = finalData[i][2] || 'PIER'; // 第3欄 (From Term)
+                    finalData[i][3] = finalData[i][3] || 'PIER'; // 第4欄 (To Term)
+                    finalData[i][4] = finalData[i][4] || reeferValue; // 第5欄 (Reefer)
+                    finalData[i][5] = finalData[i][5] || repoDateValue; // 第6欄 (Repo Eff Date)
+                }
+
+                // 創建新的工作簿和工作表
+                const newWorkbook = XLSX.utils.book_new();
+                const newWorksheet = XLSX.utils.aoa_to_sheet(finalData);
+                XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, "Processed");
+
+                // 生成輸出檔案
+                const outputFileName = `Processed-${uploadedFile.name}`;
+                XLSX.writeFile(newWorkbook, outputFileName);
+
+                status.textContent = `${translations[currentLang].complete}${outputFileName}`;
+            };
+            reader.readAsArrayBuffer(uploadedFile);
+        }
+    </script>
+</body>
+</html>
