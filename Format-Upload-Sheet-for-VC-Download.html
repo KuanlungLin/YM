@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Format Upload Sheet for VC Download</title>
+    <!-- 引入 XLSX 函式庫，用於處理 Excel 檔案 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
@@ -26,20 +27,37 @@
             margin: 0 auto;
             position: relative;
         }
-        input[type="file"], button {
+        /* 定義檔案上傳按鈕的樣式 */
+        input[type="file"] {
             display: block;
             margin: 15px auto;
             padding: 10px 20px;
             border: none;
             border-radius: 5px;
             font-size: 16px;
-        }
-        input[type="file"] {
             background-color: #D2B48C;
             color: #2C3E50;
             cursor: pointer;
         }
+        /* 將 Download Directly 和 Filter Data 按鈕並排顯示 */
+        .button-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        /* 定義按鈕之間的 "or" 文字樣式 */
+        .or-text {
+            color: #808080;
+            font-size: 16px;
+        }
+        /* 定義所有按鈕的基本樣式 */
         button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
             background-color: #2C3E50;
             color: #FFFFFF;
             cursor: pointer;
@@ -48,10 +66,10 @@
         button:hover {
             background-color: #34495E;
         }
-        #clearBtn {
+        #clearBtn, #clearSelection {
             background-color: #8B4513;
         }
-        #clearBtn:hover {
+        #clearBtn:hover, #clearSelection:hover {
             background-color: #A0522D;
         }
         #fileList, #status {
@@ -59,6 +77,7 @@
             color: #2C3E50;
             font-size: 14px;
         }
+        /* 定義語言切換下拉選單的位置 */
         #langSwitch {
             position: absolute;
             top: 10px;
@@ -76,6 +95,7 @@
             color: #2C3E50;
             width: 120px;
         }
+        /* 定義輸入欄位的水平排列樣式 */
         .input-row {
             display: flex;
             justify-content: center;
@@ -86,78 +106,337 @@
             margin-right: 10px;
             font-size: 16px;
         }
+        /* 定義篩選視窗的背景遮罩 */
+        #filterModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        /* 定義篩選視窗的內容樣式 */
+        .modal-content {
+            background-color: #FFFFFF;
+            margin: 50px auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 10px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        /* 將篩選區塊左右排列 */
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin: 15px 0;
+        }
+        .filter-section {
+            flex: 0 1 45%;
+        }
+        /* 定義篩選區塊標題的樣式 */
+        .filter-section h3 {
+            margin-bottom: 5px;
+            font-size: 18px;
+            text-align: left;
+        }
+        /* 定義篩選區塊副標題的樣式 */
+        .filter-section .subtitle {
+            font-size: 14px;
+            color: #2C3E50;
+            line-height: 1.2;
+            text-align: left;
+            margin-bottom: 15px; /* 與下方選擇窗格保持距離 */
+        }
+        /* 定義篩選選項窗格的樣式，固定高度並左對齊 */
+        .filter-options {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #D2B48C;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #F0E6D2;
+            text-align: left;
+        }
+        .filter-options label {
+            display: block;
+            margin: 5px 0 5px 0; /* 確保選項間距一致，保持左對齊 */
+            color: #2C3E50;
+        }
+        #rowCount {
+            margin: 15px 0;
+            font-size: 18px;
+            color: #8B4513;
+        }
+        #clearSelection {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
+    <!-- 主介面容器 -->
     <div class="container">
+        <!-- 語言切換下拉選單 -->
         <div id="langSwitch">
             <select id="language" onchange="changeLanguage()">
                 <option value="en">English</option>
                 <option value="zh-TW">繁體中文</option>
                 <option value="de">Deutsch</option>
+                <option value="el">Ελληνικά (Greek)</option>
+                <option value="ja">日本語 (Japanese)</option>
+                <option value="ko">한국어 (Korean)</option>
+                <option value="ru">Русский (Russian)</option>
             </select>
         </div>
+        <!-- 頁面標題 -->
         <h1 id="title">Format Upload Sheet for VC Download</h1>
+        <!-- 檔案上傳輸入框 -->
         <input type="file" id="excelFile" accept=".xlsx" onchange="updateFileList()">
+        <!-- Reefer 選擇欄位 -->
         <div class="input-row">
-            <label for="reeferInput">Reefer:</label>
+            <label id="reeferLabel" for="reeferInput">Reefer:</label>
             <select id="reeferInput">
                 <option value="N" selected>N</option>
                 <option value="Y">Y</option>
             </select>
         </div>
+        <!-- 倉庫生效日期輸入欄位 -->
         <div class="input-row">
-            <label for="repoDateInput">Repo Eff Date (YYYY.MM.DD):</label>
+            <label id="repoDateLabel" for="repoDateInput">Repo Eff Date (YYYY.MM.DD):</label>
             <input type="text" id="repoDateInput" maxlength="10" placeholder="e.g., 2025.02.26">
         </div>
-        <button id="processBtn" onclick="processFile()">Process and Download</button>
+        <!-- 功能選擇按鈕 -->
+        <div class="button-row">
+            <button id="downloadBtn" onclick="processAndDownload()">Download Directly</button>
+            <span class="or-text" id="orText">or</span>
+            <button id="filterBtn" onclick="showFilterModal()">Filter Data</button>
+        </div>
+        <!-- 清除檔案按鈕 -->
         <button id="clearBtn" onclick="clearFile()">Clear File</button>
+        <!-- 顯示已上傳檔案名稱的區域 -->
         <div id="fileList"></div>
+        <!-- 顯示處理狀態的區域 -->
         <p id="status"></p>
     </div>
 
+    <!-- 篩選視窗 -->
+    <div id="filterModal">
+        <div class="modal-content">
+            <!-- 篩選視窗標題 -->
+            <h2 id="filterTitle">Filter Data</h2>
+            <div class="filter-container">
+                <!-- Origin 篩選區塊 -->
+                <div class="filter-section">
+                    <h3 id="originLabel">Filter by Origin <span id="originReq"></span></h3>
+                    <div class="subtitle" id="originSubtitle">Multiple Selection Allowed<br>Select at Least One</div>
+                    <div id="fromFilter" class="filter-options"></div>
+                </div>
+                <!-- Destination 篩選區塊 -->
+                <div class="filter-section">
+                    <h3 id="destLabel">Filter by Destination <span id="destOpt"></span></h3>
+                    <div class="subtitle" id="destSubtitle">Multiple Selection Allowed<br>Select All by Default if None Chosen</div>
+                    <div id="toFilter" class="filter-options"></div>
+                </div>
+            </div>
+            <!-- 顯示選擇的資料列數 -->
+            <div id="rowCount"></div>
+            <!-- 清除篩選選項按鈕 -->
+            <button id="clearSelection" onclick="clearSelection()">Clear Selection</button>
+            <!-- 下載篩選後資料按鈕 -->
+            <button id="downloadFilteredBtn" onclick="applyFilterAndDownload()">Download Filtered Data</button>
+            <!-- 取消篩選視窗按鈕 -->
+            <button id="cancelBtn" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
     <script>
+        // 定義多語言翻譯物件
         const translations = {
             "en": {
-                "processBtn": "Process and Download",
+                "downloadBtn": "Download Directly",
+                "orText": "or",
+                "filterBtn": "Filter Data",
                 "clearBtn": "Clear File",
                 "fileListTitle": "Uploaded File:",
                 "noFileAlert": "Please select an Excel (.xlsx) file!",
                 "processing": "Processing...",
                 "complete": "Processing complete, file downloaded: ",
-                "invalidDateAlert": "Please enter a valid date in YYYY.MM.DD format!"
+                "invalidDateAlert": "Please enter a valid date in YYYY.MM.DD format!",
+                "filterTitle": "Filter Data",
+                "originReq": "(Required)",
+                "originSubtitle": "Multiple Selection Allowed<br>Select at Least One",
+                "destOpt": "(Optional)",
+                "destSubtitle": "Multiple Selection Allowed<br>Select All by Default if None Chosen",
+                "rowCount": "Selected rows: ",
+                "clearSelection": "Clear Selection",
+                "downloadFilteredBtn": "Download Filtered Data",
+                "cancelBtn": "Cancel",
+                "rowLimitAlert": "Selected rows exceed 500! Please reduce your selection.",
+                "originAlert": "Please select at least one value from the 'Origin' column!"
             },
             "zh-TW": {
-                "processBtn": "處理並下載",
+                "downloadBtn": "直接下載",
+                "orText": "或",
+                "filterBtn": "篩選資料",
                 "clearBtn": "清除檔案",
                 "fileListTitle": "已上傳檔案：",
                 "noFileAlert": "請選擇一個Excel (.xlsx) 檔案！",
                 "processing": "處理中...",
                 "complete": "處理完成，已下載檔案：",
-                "invalidDateAlert": "請輸入有效的日期，格式為 YYYY.MM.DD！"
+                "invalidDateAlert": "請輸入有效的日期，格式為 YYYY.MM.DD！",
+                "filterTitle": "篩選資料",
+                "originReq": "(必填)",
+                "originSubtitle": "允許多選<br>至少選擇一項",
+                "destOpt": "(選填)",
+                "destSubtitle": "允許多選<br>未選則預設全選",
+                "rowCount": "已選擇的資料列數：",
+                "clearSelection": "清除選擇",
+                "downloadFilteredBtn": "下載篩選後資料",
+                "cancelBtn": "取消",
+                "rowLimitAlert": "選擇的資料列數超過500！請減少選擇範圍。",
+                "originAlert": "請至少從「Origin」欄中選擇一個值！"
             },
             "de": {
-                "title": "Excel-Datei verarbeiten",
-                "processBtn": "Verarbeiten und herunterladen",
+                "downloadBtn": "Direkt herunterladen",
+                "orText": "oder",
+                "filterBtn": "Daten filtern",
                 "clearBtn": "Datei löschen",
                 "fileListTitle": "Hochgeladene Datei:",
                 "noFileAlert": "Bitte wählen Sie eine Excel-Datei (.xlsx) aus!",
                 "processing": "Wird verarbeitet...",
                 "complete": "Verarbeitung abgeschlossen, Datei heruntergeladen: ",
-                "invalidDateAlert": "Bitte geben Sie ein gültiges Datum im Format YYYY.MM.DD ein!"
+                "invalidDateAlert": "Bitte geben Sie ein gültiges Datum im Format YYYY.MM.DD ein!",
+                "filterTitle": "Daten filtern",
+                "originReq": "(Erforderlich)",
+                "originSubtitle": "Mehrfachauswahl erlaubt<br>Mindestens eine auswählen",
+                "destOpt": "(Optional)",
+                "destSubtitle": "Mehrfachauswahl erlaubt<br>Standardmäßig alles auswählen, wenn nichts gewählt",
+                "rowCount": "Ausgewählte Zeilen: ",
+                "clearSelection": "Auswahl löschen",
+                "downloadFilteredBtn": "Gefilterte Daten herunterladen",
+                "cancelBtn": "Abbrechen",
+                "rowLimitAlert": "Ausgewählte Zeilen überschreiten 500! Bitte reduzieren Sie Ihre Auswahl。",
+                "originAlert": "Bitte wählen Sie mindestens einen Wert aus der 'Origin'-Spalte!"
+            },
+            "el": {
+                "downloadBtn": "Άμεση Λήψη",
+                "orText": "ή",
+                "filterBtn": "Φιλτράρισμα Δεδομένων",
+                "clearBtn": "Καθαρισμός Αρχείου",
+                "fileListTitle": "Ανεβασμένο Αρχείο:",
+                "noFileAlert": "Παρακαλώ επιλέξτε ένα αρχείο Excel (.xlsx)!",
+                "processing": "Επεξεργασία...",
+                "complete": "Η επεξεργασία ολοκληρώθηκε, το αρχείο κατέβηκε: ",
+                "invalidDateAlert": "Παρακαλώ εισάγετε μια έγκυρη ημερομηνία σε μορφή ΕΕΕΕ.ΜΜ.ΗΗ!",
+                "filterTitle": "Φιλτράρισμα Δεδομένων",
+                "originReq": "(Απαιτείται)",
+                "originSubtitle": "Επιτρέπεται πολλαπλή επιλογή<br>Επιλέξτε τουλάχιστον ένα",
+                "destOpt": "(Προαιρετικό)",
+                "destSubtitle": "Επιτρέπεται πολλαπλή επιλογή<br>Επιλογή όλων από προεπιλογή αν δεν επιλεγεί τίποτα",
+                "rowCount": "Επιλεγμένες σειρές: ",
+                "clearSelection": "Καθαρισμός Επιλογής",
+                "downloadFilteredBtn": "Λήψη Φιλτραρισμένων Δεδομένων",
+                "cancelBtn": "Ακύρωση",
+                "rowLimitAlert": "Οι επιλεγμένες σειρές υπερβαίνουν τις 500! Παρακαλώ μειώστε την επιλογή σας。",
+                "originAlert": "Παρακαλώ επιλέξτε τουλάχιστον μία τιμή από τη στήλη 'Origin'!"
+            },
+            "ja": {
+                "downloadBtn": "直接ダウンロード",
+                "orText": "または",
+                "filterBtn": "データフィルタリング",
+                "clearBtn": "ファイルをクリア",
+                "fileListTitle": "アップロードされたファイル：",
+                "noFileAlert": "Excel (.xlsx) ファイルを選択してください！",
+                "processing": "処理中...",
+                "complete": "処理が完了しました、ファイルがダウンロードされました：",
+                "invalidDateAlert": "有効な日付を YYYY.MM.DD 形式で入力してください！",
+                "filterTitle": "データフィルタリング",
+                "originReq": "(必須)",
+                "originSubtitle": "複数選択可能<br>少なくとも1つ選択してください",
+                "destOpt": "(任意)",
+                "destSubtitle": "複数選択可能<br>選択がない場合はデフォルトで全て選択",
+                "rowCount": "選択された行数：",
+                "clearSelection": "選択をクリア",
+                "downloadFilteredBtn": "フィルタリングされたデータをダウンロード",
+                "cancelBtn": "キャンセル",
+                "rowLimitAlert": "選択された行数が500を超えています！選択範囲を減らしてください。",
+                "originAlert": "「Origin」列から少なくとも1つの値を選択してください！"
+            },
+            "ko": {
+                "downloadBtn": "직접 다운로드",
+                "orText": "또는",
+                "filterBtn": "데이터 필터링",
+                "clearBtn": "파일 지우기",
+                "fileListTitle": "업로드된 파일:",
+                "noFileAlert": "Excel (.xlsx) 파일을 선택해주세요!",
+                "processing": "처리 중...",
+                "complete": "처리가 완료되었습니다, 파일이 다운로드되었습니다: ",
+                "invalidDateAlert": "유효한 날짜를 YYYY.MM.DD 형식으로 입력해주세요!",
+                "filterTitle": "데이터 필터링",
+                "originReq": "(필수)",
+                "originSubtitle": "다중 선택 가능<br>최소 하나 선택",
+                "destOpt": "(선택)",
+                "destSubtitle": "다중 선택 가능<br>선택하지 않으면 기본적으로 모두 선택",
+                "rowCount": "선택된 행 수: ",
+                "clearSelection": "선택 지우기",
+                "downloadFilteredBtn": "필터링된 데이터 다운로드",
+                "cancelBtn": "취소",
+                "rowLimitAlert": "선택된 행 수가 500을 초과했습니다! 선택 범위를 줄여주세요。",
+                "originAlert": "'Origin' 열에서 최소 하나 이상의 값을 선택해주세요!"
+            },
+            "ru": {
+                "downloadBtn": "Скачать напрямую",
+                "orText": "или",
+                "filterBtn": "Фильтровать данные",
+                "clearBtn": "Очистить файл",
+                "fileListTitle": "Загруженный файл:",
+                "noFileAlert": "Пожалуйста, выберите файл Excel (.xlsx)!",
+                "processing": "Обработка...",
+                "complete": "Обработка завершена, файл загружен: ",
+                "invalidDateAlert": "Пожалуйста, введите действительную дату в формате ГГГГ.ММ.ДД!",
+                "filterTitle": "Фильтровать данные",
+                "originReq": "(Обязательно)",
+                "originSubtitle": "Разрешён множественный выбор<br>Выберите хотя бы одно",
+                "destOpt": "(Необязательно)",
+                "destSubtitle": "Разрешён множественный выбор<br>По умолчанию выбирается всё, если ничего не выбрано",
+                "rowCount": "Выбранные строки: ",
+                "clearSelection": "Очистить выбор",
+                "downloadFilteredBtn": "Скачать отфильтрованные данные",
+                "cancelBtn": "Отмена",
+                "rowLimitAlert": "Выбранные строки превышают 500! Пожалуйста, уменьшите выбор.",
+                "originAlert": "Пожалуйста, выберите хотя бы одно значение из столбца 'Origin'!"
             }
         };
 
+        // 定義全域變數
         let currentLang = "en";
         let uploadedFile = null;
+        let processedData = null;
 
+        // 處理語言切換，更新介面文字
         function changeLanguage() {
             currentLang = document.getElementById('language').value;
-            document.getElementById('processBtn').textContent = translations[currentLang].processBtn;
+            document.getElementById('downloadBtn').textContent = translations[currentLang].downloadBtn;
+            document.getElementById('orText').textContent = translations[currentLang].orText;
+            document.getElementById('filterBtn').textContent = translations[currentLang].filterBtn;
             document.getElementById('clearBtn').textContent = translations[currentLang].clearBtn;
+            document.getElementById('filterTitle').textContent = translations[currentLang].filterTitle;
+            document.getElementById('originReq').textContent = translations[currentLang].originReq;
+            document.getElementById('originSubtitle').innerHTML = translations[currentLang].originSubtitle;
+            document.getElementById('destOpt').textContent = translations[currentLang].destOpt;
+            document.getElementById('destSubtitle').innerHTML = translations[currentLang].destSubtitle;
+            document.getElementById('clearSelection').textContent = translations[currentLang].clearSelection;
+            document.getElementById('downloadFilteredBtn').textContent = translations[currentLang].downloadFilteredBtn;
+            document.getElementById('cancelBtn').textContent = translations[currentLang].cancelBtn;
             displayFileName();
+            updateRowCount();
         }
 
+        // 更新已上傳檔案資訊
         function updateFileList() {
             const file = document.getElementById('excelFile').files[0];
             if (file) {
@@ -166,14 +445,17 @@
             }
         }
 
+        // 顯示已上傳檔案名稱
         function displayFileName() {
             const fileList = document.getElementById('fileList');
             fileList.innerHTML = uploadedFile ?
                 `<h3>${translations[currentLang].fileListTitle}</h3><p>${uploadedFile.name}</p>` : '';
         }
 
+        // 清除所有輸入和狀態
         function clearFile() {
             uploadedFile = null;
+            processedData = null;
             document.getElementById('excelFile').value = '';
             document.getElementById('reeferInput').value = 'N';
             document.getElementById('repoDateInput').value = '';
@@ -181,9 +463,9 @@
             document.getElementById('status').textContent = '';
         }
 
-        // 自動添加日期分隔符
+        // 處理日期輸入格式化
         document.getElementById('repoDateInput').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, ''); // 只保留數字
+            let value = e.target.value.replace(/\D/g, '');
             if (value.length > 4 && value.length <= 6) {
                 value = value.slice(0, 4) + '.' + value.slice(4);
             } else if (value.length > 6) {
@@ -192,6 +474,7 @@
             e.target.value = value;
         });
 
+        // 驗證日期格式是否正確
         function isValidDateFormat(dateStr) {
             const regex = /^\d{4}\.\d{2}\.\d{2}$/;
             if (!regex.test(dateStr)) return false;
@@ -200,7 +483,23 @@
             return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
         }
 
-        function processFile() {
+        // 插入預設的 From 和 To 值
+        function insertValues(data) {
+            const fromValues = ["NLRTM", "BEANR", "FRLEH", "DEHAM", "DEWVN", "DKAAR", "DKCPH", "DKFRC", "PLGDY", "GBSOU", "GBLGP"];
+            const toValues = ["THLKR", "TWTAO", "VNPX1", "VNHPP", "TWTPE", "INHZA", "PKKHI", "INNSA", "INMUN", "VNSPT", "VNLHP", "VNVUT", "VNGNT"];
+
+            let newRows = [];
+            toValues.forEach(toValue => {
+                fromValues.forEach(fromValue => {
+                    newRows.push([fromValue, toValue]);
+                });
+            });
+
+            return data.concat(newRows);
+        }
+
+        // 處理上傳檔案並準備資料
+        function processInitialData(callback) {
             const status = document.getElementById('status');
             status.textContent = translations[currentLang].processing;
 
@@ -211,7 +510,7 @@
             }
 
             const reeferInput = document.getElementById('reeferInput').value;
-            const reeferValue = reeferInput === 'Y' ? 'Y' : ''; // N 填空白
+            const reeferValue = reeferInput === 'Y' ? 'Y' : '';
             const repoDateValue = document.getElementById('repoDateInput').value.trim();
             if (repoDateValue && !isValidDateFormat(repoDateValue)) {
                 alert(translations[currentLang].invalidDateAlert);
@@ -226,52 +525,136 @@
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
                 
-                // 將工作表轉換為陣列，保留所有行（包括空白行）
                 let jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
                 
-                // 移除第一行與最後兩行
                 if (jsonData.length > 3) {
-                    jsonData = jsonData.slice(1);       // 移除第一行
-                    jsonData = jsonData.slice(0, -1);   // 移除最後一行
-                    jsonData = jsonData.slice(0, -1);   // 再次移除最後一行
+                    jsonData = jsonData.slice(1);
+                    jsonData = jsonData.slice(0, -1);
+                    jsonData = jsonData.slice(0, -1);
                 } else {
-                    jsonData = []; // 如果行數不足，輸出空數據
+                    jsonData = [];
                 }
                 
-                // 只保留第一欄並以"-"分割
-                let processedData = jsonData.map(row => {
+                let processed = jsonData.map(row => {
                     const firstColumn = row[0] ? String(row[0]).split('-') : [''];
                     return firstColumn;
                 });
 
-                // 在最頂端新增標頭行
-                const headerRow = ['From', 'To', 'From Term', 'To Term', 'Reefer', 'Repo Eff Date', 'Case Id', 'SOC'];
-                let finalData = [headerRow].concat(processedData);
+                processed = insertValues(processed);
 
-                // 從第2行開始，填入 "PIER", "Reefer", 和 "Repo Eff Date"，直到第1欄為空白
-                for (let i = 1; i < finalData.length; i++) {
-                    if (!finalData[i][0] || finalData[i][0].trim() === '') {
-                        break; // 如果第1欄空白，停止填寫
+                const headerRow = ['From', 'To', 'From Term', 'To Term', 'Reefer', 'Repo Eff Date', 'Case Id', 'SOC'];
+                processedData = [headerRow].concat(processed);
+
+                for (let i = 1; i < processedData.length; i++) {
+                    if (!processedData[i][0] || processedData[i][0].trim() === '') {
+                        break;
                     }
-                    finalData[i][2] = finalData[i][2] || 'PIER'; // 第3欄 (From Term)
-                    finalData[i][3] = finalData[i][3] || 'PIER'; // 第4欄 (To Term)
-                    finalData[i][4] = finalData[i][4] || reeferValue; // 第5欄 (Reefer)
-                    finalData[i][5] = finalData[i][5] || repoDateValue; // 第6欄 (Repo Eff Date)
+                    processedData[i][2] = processedData[i][2] || 'PIER';
+                    processedData[i][3] = processedData[i][3] || 'PIER';
+                    processedData[i][4] = processedData[i][4] || reeferValue;
+                    processedData[i][5] = processedData[i][5] || repoDateValue;
                 }
 
-                // 創建新的工作簿和工作表
-                const newWorkbook = XLSX.utils.book_new();
-                const newWorksheet = XLSX.utils.aoa_to_sheet(finalData);
-                XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, "Processed");
-
-                // 生成輸出檔案
-                const outputFileName = `Processed-${uploadedFile.name}`;
-                XLSX.writeFile(newWorkbook, outputFileName);
-
-                status.textContent = `${translations[currentLang].complete}${outputFileName}`;
+                callback();
             };
             reader.readAsArrayBuffer(uploadedFile);
         }
+
+        // 直接處理並下載完整檔案
+        function processAndDownload() {
+            processInitialData(() => {
+                const newWorkbook = XLSX.utils.book_new();
+                const newWorksheet = XLSX.utils.aoa_to_sheet(processedData);
+                XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, "Processed");
+                const outputFileName = `Processed-${uploadedFile.name}`;
+                XLSX.writeFile(newWorkbook, outputFileName);
+                document.getElementById('status').textContent = `${translations[currentLang].complete}${outputFileName}`;
+            });
+        }
+
+        // 顯示篩選視窗並生成篩選選項
+        function showFilterModal() {
+            processInitialData(() => {
+                const fromFilter = document.getElementById('fromFilter');
+                const toFilter = document.getElementById('toFilter');
+                
+                const fromValues = [...new Set(processedData.slice(1).map(row => row[0]).filter(v => v))];
+                const toValues = [...new Set(processedData.slice(1).map(row => row[1]).filter(v => v))];
+
+                fromFilter.innerHTML = fromValues.map(val => 
+                    `<label><input type="checkbox" name="from" value="${val}" onchange="updateRowCount()"> ${val}</label>`
+                ).join('');
+                
+                toFilter.innerHTML = toValues.map(val => 
+                    `<label><input type="checkbox" name="to" value="${val}" onchange="updateRowCount()"> ${val}</label>`
+                ).join('');
+
+                document.getElementById('filterModal').style.display = 'block';
+                document.getElementById('status').textContent = '';
+                updateRowCount();
+            });
+        }
+
+        // 關閉篩選視窗
+        function closeModal() {
+            document.getElementById('filterModal').style.display = 'none';
+        }
+
+        // 更新並顯示篩選後的資料列數
+        function updateRowCount() {
+            const fromChecked = Array.from(document.querySelectorAll('input[name="from"]:checked')).map(cb => cb.value);
+            const toChecked = Array.from(document.querySelectorAll('input[name="to"]:checked')).map(cb => cb.value);
+
+            const filteredRows = processedData.slice(1).filter(row => 
+                fromChecked.includes(row[0]) && 
+                (toChecked.length === 0 || toChecked.includes(row[1]))
+            ).length;
+
+            document.getElementById('rowCount').textContent = `${translations[currentLang].rowCount}${filteredRows}`;
+        }
+
+        // 清除篩選選項
+        function clearSelection() {
+            document.querySelectorAll('input[name="from"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('input[name="to"]').forEach(cb => cb.checked = false);
+            updateRowCount();
+        }
+
+        // 應用篩選並下載檔案
+        function applyFilterAndDownload() {
+            const fromChecked = Array.from(document.querySelectorAll('input[name="from"]:checked')).map(cb => cb.value);
+            const toChecked = Array.from(document.querySelectorAll('input[name="to"]:checked')).map(cb => cb.value);
+
+            if (fromChecked.length === 0) {
+                alert(translations[currentLang].originAlert);
+                return;
+            }
+
+            const filteredData = [processedData[0]].concat(
+                processedData.slice(1).filter(row => 
+                    fromChecked.includes(row[0]) && 
+                    (toChecked.length === 0 || toChecked.includes(row[1]))
+                )
+            );
+
+            const rowCount = filteredData.length - 1; // 不含標題列
+            if (rowCount > 500) {
+                alert(translations[currentLang].rowLimitAlert);
+                return;
+            }
+
+            const newWorkbook = XLSX.utils.book_new();
+            const newWorksheet = XLSX.utils.aoa_to_sheet(filteredData);
+            XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, "Filtered");
+            const outputFileName = `Filtered-${uploadedFile.name}`;
+            XLSX.writeFile(newWorkbook, outputFileName);
+            
+            document.getElementById('status').textContent = `${translations[currentLang].complete}${outputFileName} (${translations[currentLang].rowCount}${rowCount})`;
+            closeModal();
+        }
+
+        // 初始化語言設定
+        changeLanguage();
     </script>
 </body>
 </html>
