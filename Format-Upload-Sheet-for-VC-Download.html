@@ -72,10 +72,10 @@
             background-color: #A9A9A9;
             cursor: not-allowed;
         }
-        #clearAllBtn, #clearSelection, #savePortsBtn {
+        #clearAllBtn, #clearSelection, #saveBtn:not(:disabled), #ncpeDefaultBtn, #downloadBtn:not(:disabled), #filterBtn:not(:disabled) {
             background-color: #8B4513;
         }
-        #clearAllBtn:hover:not(:disabled), #clearSelection:hover:not(:disabled), #savePortsBtn:hover:not(:disabled) {
+        #clearAllBtn:hover:not(:disabled), #clearSelection:hover:not(:disabled), #saveBtn:hover:not(:disabled), #ncpeDefaultBtn:hover:not(:disabled), #downloadBtn:hover:not(:disabled), #filterBtn:hover:not(:disabled) {
             background-color: #A0522D;
         }
         #clearPortsBtn {
@@ -215,7 +215,7 @@
             font-size: 18px;
             color: #8B4513;
         }
-        #clearSelection, #savePortsBtn {
+        #clearSelection {
             margin-top: 10px;
         }
         #portsTable {
@@ -265,6 +265,12 @@
         .help-icon:hover + .help-tooltip {
             display: block;
         }
+        .ports-upload-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
     </style>
 </head>
 <body>
@@ -293,9 +299,9 @@
             <div id="dateError"></div>
         </div>
         <div class="button-row">
-            <button id="downloadBtn" onclick="processAndDownload()">Download Directly</button>
+            <button id="downloadBtn" onclick="processAndDownload()" disabled>Download Directly</button>
             <span class="or-text" id="orText">or</span>
-            <button id="filterBtn" onclick="showFilterModal()">Filter Data</button>
+            <button id="filterBtn" onclick="showFilterModal()" disabled>Filter Data</button>
         </div>
         <button id="clearAllBtn" onclick="clearFile()" style="background-color: #A52A2A;" onmouseover="this.style.backgroundColor='#8B1A1A'" onmouseout="this.style.backgroundColor='#A52A2A'">Clear All</button>
         <div id="fileList"></div>
@@ -335,10 +341,15 @@
                 - If To is empty, unique To values from the main file will be used.<br>
                 - If both From and To are provided, combinations will be generated.<br>
                 - Uploaded values will overwrite manually entered values if confirmed.<br>
-                - Values are only saved when you click Save Ports. If any value has an invalid format, Save Ports will be disabled.<br>
+                - Values are only saved when you click Save. If any value has an invalid format, Save will be disabled.<br>
                 - Invalid values will be highlighted in red.
             </div>
-            <input type="file" id="portsFile" accept=".xlsx, .xls" onchange="loadPortsFile()">
+            <div class="ports-upload-row">
+                <input type="file" id="portsFile" accept=".xlsx, .xls" onchange="loadPortsFile()">
+                <button id="saveBtn" onclick="savePorts()">Save</button>
+                <button onclick="closeModal('portsModal')">Cancel</button>
+            </div>
+            <button id="ncpeDefaultBtn" onclick="setNcpeDefault()">NCPE Default</button>
             <table id="portsTable">
                 <thead>
                     <tr>
@@ -348,8 +359,6 @@
                 </thead>
                 <tbody id="portsTableBody"></tbody>
             </table>
-            <button id="savePortsBtn" onclick="savePorts()">Save Ports</button>
-            <button onclick="closeModal('portsModal')">Cancel</button>
         </div>
     </div>
 
@@ -377,7 +386,7 @@
                 "rowLimitAlert": "Selected rows exceed 500! Please reduce your selection.",
                 "originAlert": "Please select at least one value from the 'Origin' column!",
                 "portsBtn": "Insert Extra Ports",
-                "savePortsBtn": "Save Ports",
+                "savePortsBtn": "Save",
                 "clearPortsBtn": "Clear Extra Ports",
                 "portsStatusEmpty": "Insert Extra Ports: No values added",
                 "portsStatusFilled": "Insert Extra Ports: Values added",
@@ -386,7 +395,10 @@
                 "portsFormatError": "Invalid format at row {row}: {value}. Must be 5 characters (uppercase letters or numbers only).",
                 "portsInvalidFormatAlert": "Cannot save due to invalid format in one or more fields. Values must be 5 characters (uppercase letters or numbers only).",
                 "dateFormatError": "Invalid date",
-                "dateRangeError": "Invalid date"
+                "dateRangeError": "Invalid date",
+                "portsUnsavedConfirm": "You have unsaved changes in From/To values. Are you sure you want to cancel?",
+                "ncpeDefaultConfirm": "This will clear all existing From/To values and apply NCPE defaults. Proceed?",
+                "fileNameEmptyAlert": "File name cannot be empty!"
             }
         };
 
@@ -412,7 +424,7 @@
             document.getElementById('clearSelection').textContent = translations[currentLang].clearSelection;
             document.getElementById('downloadFilteredBtn').textContent = translations[currentLang].downloadFilteredBtn;
             document.getElementById('cancelBtn').textContent = translations[currentLang].cancelBtn;
-            document.getElementById('savePortsBtn').textContent = translations[currentLang].savePortsBtn;
+            document.getElementById('saveBtn').textContent = translations[currentLang].savePortsBtn;
             displayFileName();
             updatePortsStatus();
             updateRowCount();
@@ -424,9 +436,14 @@
                 uploadedFile = file;
                 displayFileName();
                 document.getElementById('portsBtn').disabled = false;
+                document.getElementById('downloadBtn').disabled = false;
+                document.getElementById('filterBtn').disabled = false;
             } else {
+                uploadedFile = null;
                 document.getElementById('portsBtn').disabled = true;
                 document.getElementById('clearPortsBtn').disabled = true;
+                document.getElementById('downloadBtn').disabled = true;
+                document.getElementById('filterBtn').disabled = true;
             }
             updatePortsStatus();
         }
@@ -456,6 +473,8 @@
             document.getElementById('repoDateInput').value = '';
             document.getElementById('portsBtn').disabled = true;
             document.getElementById('clearPortsBtn').disabled = true;
+            document.getElementById('downloadBtn').disabled = true;
+            document.getElementById('filterBtn').disabled = true;
             displayFileName();
             updatePortsStatus();
             document.getElementById('status').style.display = 'none';
@@ -613,10 +632,19 @@
 
         function processAndDownload() {
             processInitialData(() => {
+                let userFileName;
+                do {
+                    userFileName = prompt("Please enter the file name for download:", `Processed-${uploadedFile.name}`);
+                    if (userFileName === null) return; // 取消操作
+                    if (userFileName.trim() === "") {
+                        alert(translations[currentLang].fileNameEmptyAlert);
+                    }
+                } while (userFileName.trim() === "");
+                
+                const outputFileName = userFileName + ".xlsx";
                 const newWorkbook = XLSX.utils.book_new();
                 const newWorksheet = XLSX.utils.aoa_to_sheet(processedData);
                 XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, "Processed");
-                const outputFileName = `Processed-${uploadedFile.name}`;
                 XLSX.writeFile(newWorkbook, outputFileName);
                 document.getElementById('status').textContent = `${translations[currentLang].complete}${outputFileName}`;
                 document.getElementById('status').style.display = 'block';
@@ -654,6 +682,14 @@
         }
 
         function closeModal(modalId) {
+            if (modalId === 'portsModal') {
+                const hasUnsavedChanges = portsData.some((row, index) => 
+                    row[0] !== savedPortsData[index][0] || row[1] !== savedPortsData[index][1]
+                );
+                if (hasUnsavedChanges && !confirm(translations[currentLang].portsUnsavedConfirm)) {
+                    return;
+                }
+            }
             document.getElementById(modalId).style.display = 'none';
             updatePortsStatus();
         }
@@ -708,6 +744,20 @@
             reader.readAsArrayBuffer(file);
         }
 
+        function setNcpeDefault() {
+            const hasManualInput = portsData.some(row => row[0] || row[1]);
+            if (hasManualInput && !confirm(translations[currentLang].ncpeDefaultConfirm)) {
+                return;
+            }
+            const ncpeToValues = ["THLKR", "TWTAO", "VNPX1", "VNHPP", "TWTPE", "VNSPT", "VNLHP", "VNVUT", "VNGNT"];
+            portsData = Array(30).fill().map(() => ['', '']);
+            ncpeToValues.forEach((value, index) => {
+                portsData[index][1] = value;
+            });
+            displayPortsTable();
+            updateSavePortsButtonState();
+        }
+
         function displayPortsTable() {
             const tbody = document.getElementById('portsTableBody');
             tbody.innerHTML = '';
@@ -745,7 +795,7 @@
         }
 
         function updateSavePortsButtonState() {
-            const saveBtn = document.getElementById('savePortsBtn');
+            const saveBtn = document.getElementById('saveBtn');
             const hasValues = portsData.some(row => row[0] || row[1]);
             const hasInvalid = portsData.some(row => 
                 (row[0] && !isValidPortValue(row[0])) || 
@@ -810,10 +860,19 @@
                     return;
                 }
 
+                let userFileName;
+                do {
+                    userFileName = prompt("Please enter the file name for download:", `Filtered-${uploadedFile.name}`);
+                    if (userFileName === null) return; // 取消操作
+                    if (userFileName.trim() === "") {
+                        alert(translations[currentLang].fileNameEmptyAlert);
+                    }
+                } while (userFileName.trim() === "");
+
+                const outputFileName = userFileName + ".xlsx";
                 const newWorkbook = XLSX.utils.book_new();
                 const newWorksheet = XLSX.utils.aoa_to_sheet(filteredData);
                 XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, "Filtered");
-                const outputFileName = `Filtered-${uploadedFile.name}`;
                 XLSX.writeFile(newWorkbook, outputFileName);
                 
                 document.getElementById('status').textContent = `${translations[currentLang].complete}${outputFileName}`;
