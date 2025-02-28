@@ -25,6 +25,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             max-width: 600px;
             margin: 0 auto;
+            position: relative;
         }
         input[type="file"], button {
             display: block;
@@ -49,7 +50,7 @@
             background-color: #34495E;
         }
         button:disabled {
-            background-color: #A9A9A9; /* 反灰色 */
+            background-color: #A9A9A9;
             cursor: not-allowed;
         }
         #clearBtn {
@@ -85,26 +86,139 @@
         #fileList li button:hover:not(:disabled) {
             background-color: #CD5C5C;
         }
+        #langSwitch {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        #language {
+            padding: 5px;
+            border-radius: 5px;
+            background-color: #F0E6D2;
+            color: #2C3E50;
+            border: none;
+        }
+        #backBtn {
+            background-color: #A52A2A;
+            margin-top: 20px;
+        }
+        #backBtn:hover {
+            background-color: #8B1A1A;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Merge Cost Sheets from VC Download</h1>
+        <div id="langSwitch">
+            <select id="language" onchange="changeLanguage()">
+                <option value="en">English</option>
+                <option value="zh">繁體中文</option>
+                <option value="de">Deutsch</option>
+                <option value="el">Ελληνικά</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="ru">Русский</option>
+            </select>
+        </div>
+        <h1 id="title">Merge Cost Sheets from VC Download</h1>
         <input type="file" id="csvFiles" multiple accept=".csv" onchange="updateFileList()">
         <button id="processBtn" onclick="processFiles()" disabled>Process and Download</button>
         <button id="clearBtn" onclick="clearFiles()">Clear All Files</button>
         <div id="fileList"></div>
         <p id="status"></p>
+        <button id="backBtn" onclick="window.location.href='VC-Download-Assistant.html'">Back to Main</button>
     </div>
 
     <script>
-        let uploadedFiles = []; // 儲存已上傳的檔案
+        const translations = {
+            "en": {
+                "title": "Merge Cost Sheets from VC Download",
+                "processBtn": "Process and Download",
+                "clearBtn": "Clear All Files",
+                "noFileAlert": "Please select at least one CSV file!",
+                "processing": "Processing...",
+                "complete": "Processing complete, file downloaded: ",
+                "backBtn": "Back to Main"
+            },
+            "zh": {
+                "title": "合併 VC 下載的成本表",
+                "processBtn": "處理並下載",
+                "clearBtn": "清除所有檔案",
+                "noFileAlert": "請至少選擇一個 CSV 檔案！",
+                "processing": "處理中...",
+                "complete": "處理完成，檔案已下載：",
+                "backBtn": "返回主畫面"
+            },
+            "de": {
+                "title": "Kostenblätter aus VC-Download zusammenführen",
+                "processBtn": "Verarbeiten und herunterladen",
+                "clearBtn": "Alle Dateien löschen",
+                "noFileAlert": "Bitte wählen Sie mindestens eine CSV-Datei aus!",
+                "processing": "Verarbeitung...",
+                "complete": "Verarbeitung abgeschlossen, Datei heruntergeladen: ",
+                "backBtn": "Zurück zum Hauptbildschirm"
+            },
+            "el": {
+                "title": "Συγχώνευση φύλλων κόστους από λήψη VC",
+                "processBtn": "Επεξεργασία και λήψη",
+                "clearBtn": "Εκκαθάριση όλων των αρχείων",
+                "noFileAlert": "Παρακαλώ επιλέξτε τουλάχιστον ένα αρχείο CSV!",
+                "processing": "Επεξεργασία...",
+                "complete": "Η επεξεργασία ολοκληρώθηκε, το αρχείο κατέβηκε: ",
+                "backBtn": "Επιστροφή στην κύρια οθόνη"
+            },
+            "ja": {
+                "title": "VCダウンロードからのコストシートを結合",
+                "processBtn": "処理してダウンロード",
+                "clearBtn": "すべてのファイルをクリア",
+                "noFileAlert": "少なくとも1つのCSVファイルを選択してください！",
+                "processing": "処理中...",
+                "complete": "処理が完了しました、ファイルがダウンロードされました：",
+                "backBtn": "メイン画面に戻る"
+            },
+            "ko": {
+                "title": "VC 다운로드에서 비용 시트 병합",
+                "processBtn": "처리 및 다운로드",
+                "clearBtn": "모든 파일 지우기",
+                "noFileAlert": "최소 하나 이상의 CSV 파일을 선택하세요!",
+                "processing": "처리 중...",
+                "complete": "처리 완료, 파일 다운로드됨: ",
+                "backBtn": "메인 화면으로 돌아가기"
+            },
+            "ru": {
+                "title": "Объединить таблицы затрат из скачивания VC",
+                "processBtn": "Обработать и скачать",
+                "clearBtn": "Очистить все файлы",
+                "noFileAlert": "Пожалуйста, выберите хотя бы один CSV-файл!",
+                "processing": "Обработка...",
+                "complete": "Обработка завершена, файл скачан: ",
+                "backBtn": "Вернуться на главный экран"
+            }
+        };
+
+        let currentLang = localStorage.getItem('language') || 'en';
+        let uploadedFiles = [];
+
+        function changeLanguage() {
+            currentLang = document.getElementById('language').value;
+            localStorage.setItem('language', currentLang);
+            applyTranslations();
+        }
+
+        function applyTranslations() {
+            document.getElementById('language').value = currentLang;
+            document.getElementById('title').textContent = translations[currentLang].title;
+            document.getElementById('processBtn').textContent = translations[currentLang].processBtn;
+            document.getElementById('clearBtn').textContent = translations[currentLang].clearBtn;
+            document.getElementById('backBtn').textContent = translations[currentLang].backBtn;
+            displayFileNames();
+        }
 
         function updateFileList() {
             const files = document.getElementById('csvFiles').files;
             if (files.length > 0) {
-                uploadedFiles = uploadedFiles.concat(Array.from(files)); // 追加新檔案
-                document.getElementById('csvFiles').value = ''; // 清空輸入框
+                uploadedFiles = uploadedFiles.concat(Array.from(files));
+                document.getElementById('csvFiles').value = '';
             }
             displayFileNames();
             toggleProcessButton();
@@ -128,22 +242,22 @@
         }
 
         function deleteFile(index) {
-            uploadedFiles.splice(index, 1); // 移除指定檔案
+            uploadedFiles.splice(index, 1);
             displayFileNames();
             toggleProcessButton();
         }
 
         function toggleProcessButton() {
             const processBtn = document.getElementById('processBtn');
-            processBtn.disabled = uploadedFiles.length === 0; // 根據檔案數量啟用/禁用
+            processBtn.disabled = uploadedFiles.length === 0;
         }
 
         function processFiles() {
             const status = document.getElementById('status');
-            status.textContent = "Processing...";
+            status.textContent = translations[currentLang].processing;
 
             if (uploadedFiles.length === 0) {
-                alert("Please select at least one CSV file!");
+                alert(translations[currentLang].noFileAlert);
                 status.textContent = "";
                 return;
             }
@@ -218,11 +332,14 @@
                         XLSX.utils.book_append_sheet(wb, ws, "Merged");
                         XLSX.writeFile(wb, finalFileName);
 
-                        status.textContent = `Processing complete, file downloaded: ${finalFileName}`;
+                        status.textContent = `${translations[currentLang].complete}${finalFileName}`;
                     }
                 });
             }
         }
+
+        // 初始化語言
+        applyTranslations();
     </script>
 </body>
 </html>

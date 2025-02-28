@@ -114,7 +114,7 @@
             top: 10px;
             right: 10px;
         }
-        #langSwitch select, #reeferInput {
+        #language, #reeferInput {
             padding: 5px;
             border-radius: 5px;
             background-color: #F0E6D2;
@@ -271,6 +271,13 @@
             gap: 10px;
             margin: 15px 0;
         }
+        #backBtn {
+            background-color: #A52A2A;
+            margin-top: 20px;
+        }
+        #backBtn:hover {
+            background-color: #8B1A1A;
+        }
     </style>
 </head>
 <body>
@@ -278,6 +285,12 @@
         <div id="langSwitch">
             <select id="language" onchange="changeLanguage()">
                 <option value="en">English</option>
+                <option value="zh">繁體中文</option>
+                <option value="de">Deutsch</option>
+                <option value="el">Ελληνικά</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="ru">Русский</option>
             </select>
         </div>
         <h1 id="title">Format Upload Sheet for VC Download</h1>
@@ -303,10 +316,11 @@
             <span class="or-text" id="orText">or</span>
             <button id="filterBtn" onclick="showFilterModal()" disabled>Filter Data</button>
         </div>
-        <button id="clearAllBtn" onclick="clearFile()" style="background-color: #A52A2A;" onmouseover="this.style.backgroundColor='#8B1A1A'" onmouseout="this.style.backgroundColor='#A52A2A'">Clear All</button>
+        <button id="clearAllBtn" onclick="clearFile()">Clear All</button>
         <div id="fileList"></div>
         <div id="portsStatus"></div>
         <div id="status"></div>
+        <button id="backBtn" onclick="window.location.href='VC-Download-Assistant.html'">Back to Main</button>
     </div>
 
     <div id="filterModal">
@@ -314,12 +328,12 @@
             <h2 id="filterTitle">Filter Data</h2>
             <div class="filter-container">
                 <div class="filter-section">
-                    <h3 id="originLabel">Filter by Origin <span id="originReq"></span></h3>
+                    <h3>Filter by Origin <span id="originReq"></span></h3>
                     <div class="subtitle" id="originSubtitle">Multiple Selection Allowed<br>Select at Least One</div>
                     <div id="fromFilter" class="filter-options"></div>
                 </div>
                 <div class="filter-section">
-                    <h3 id="destLabel">Filter by Destination <span id="destOpt"></span></h3>
+                    <h3>Filter by Destination <span id="destOpt"></span></h3>
                     <div class="subtitle" id="destSubtitle">Multiple Selection Allowed<br>Select All by Default if None Chosen</div>
                     <div id="toFilter" class="filter-options"></div>
                 </div>
@@ -365,11 +379,16 @@
     <script>
         const translations = {
             "en": {
+                "title": "Format Upload Sheet for VC Download",
+                "portsBtn": "Insert Extra Ports",
+                "clearPortsBtn": "Clear Extra Ports",
                 "downloadBtn": "Download Directly",
                 "orText": "or",
                 "filterBtn": "Filter Data",
-                "clearBtn": "Clear All",
+                "clearAllBtn": "Clear All",
                 "fileListTitle": "Uploaded File:",
+                "portsStatusEmpty": "Insert Extra Ports: No values added",
+                "portsStatusFilled": "Insert Extra Ports: Values added",
                 "noFileAlert": "Please select an Excel (.xlsx) file!",
                 "processing": "Processing...",
                 "complete": "Processing complete, file downloaded: ",
@@ -383,13 +402,8 @@
                 "clearSelection": "Clear Selection",
                 "downloadFilteredBtn": "Download Filtered Data",
                 "cancelBtn": "Cancel",
-                "rowLimitAlert": "Selected rows exceed 500! Please reduce your selection.",
-                "originAlert": "Please select at least one value from the 'Origin' column!",
-                "portsBtn": "Insert Extra Ports",
+                "backBtn": "Back to Main",
                 "savePortsBtn": "Save",
-                "clearPortsBtn": "Clear Extra Ports",
-                "portsStatusEmpty": "Insert Extra Ports: No values added",
-                "portsStatusFilled": "Insert Extra Ports: Values added",
                 "portsUploadLimitAlert": "Uploaded file exceeds 30 rows (excluding header). Only the first 30 rows will be used.",
                 "portsUploadOverwriteConfirm": "You have manually entered values. Uploading a file will overwrite them. Proceed?",
                 "portsFormatError": "Invalid format at row {row}: {value}. Must be 5 characters (uppercase letters or numbers only).",
@@ -398,11 +412,241 @@
                 "dateRangeError": "Invalid date",
                 "portsUnsavedConfirm": "You have unsaved changes in From/To values. Are you sure you want to cancel?",
                 "ncpeDefaultConfirm": "This will clear all existing From/To values and apply NCPE defaults. Proceed?",
+                "rowLimitAlert": "Selected rows exceed 500! Please reduce your selection.",
+                "originAlert": "Please select at least one value from the 'Origin' column!",
                 "fileNameEmptyAlert": "File name cannot be empty!"
+            },
+            "zh": {
+                "title": "格式化上傳表單給 VC 下載",
+                "portsBtn": "插入額外港口",
+                "clearPortsBtn": "清除額外港口",
+                "downloadBtn": "直接下載",
+                "orText": "或",
+                "filterBtn": "篩選數據",
+                "clearAllBtn": "全部清除",
+                "fileListTitle": "已上傳檔案：",
+                "portsStatusEmpty": "插入額外港口：未添加值",
+                "portsStatusFilled": "插入額外港口：已添加值",
+                "noFileAlert": "請選擇一個 Excel (.xlsx) 檔案！",
+                "processing": "處理中...",
+                "complete": "處理完成，檔案已下載：",
+                "invalidDateAlert": "請輸入有效的 YYYY.MM.DD 格式日期！",
+                "filterTitle": "篩選數據",
+                "originReq": "(必填)",
+                "originSubtitle": "允許多選<br>至少選擇一個",
+                "destOpt": "(選填)",
+                "destSubtitle": "允許多選<br>未選擇時預設全選",
+                "rowCount": "已選行數：",
+                "clearSelection": "清除選擇",
+                "downloadFilteredBtn": "下載篩選後數據",
+                "cancelBtn": "取消",
+                "backBtn": "返回主畫面",
+                "savePortsBtn": "儲存",
+                "portsUploadLimitAlert": "上傳檔案超過 30 行（不含標頭）。僅使用前 30 行。",
+                "portsUploadOverwriteConfirm": "您已手動輸入值。上傳檔案將覆蓋它們。是否繼續？",
+                "portsFormatError": "第 {row} 行格式錯誤：{value}。必須為 5 個字元（僅限大寫字母或數字）。",
+                "portsInvalidFormatAlert": "由於一個或多個欄位格式無效，無法儲存。值必須為 5 個字元（僅限大寫字母或數字）。",
+                "dateFormatError": "無效日期",
+                "dateRangeError": "無效日期",
+                "portsUnsavedConfirm": "您在 From/To 值中有未儲存的變更。確定要取消嗎？",
+                "ncpeDefaultConfirm": "這將清除所有現有 From/To 值並應用 NCPE 預設值。是否繼續？",
+                "rowLimitAlert": "所選行數超過 500！請減少選擇。",
+                "originAlert": "請從 'Origin' 欄位中至少選擇一個值！",
+                "fileNameEmptyAlert": "檔案名稱不能為空！"
+            },
+            "de": {
+                "title": "Upload-Blatt für VC-Download formatieren",
+                "portsBtn": "Zusätzliche Häfen einfügen",
+                "clearPortsBtn": "Zusätzliche Häfen löschen",
+                "downloadBtn": "Direkt herunterladen",
+                "orText": "oder",
+                "filterBtn": "Daten filtern",
+                "clearAllBtn": "Alles löschen",
+                "fileListTitle": "Hochgeladene Datei:",
+                "portsStatusEmpty": "Zusätzliche Häfen einfügen: Keine Werte hinzugefügt",
+                "portsStatusFilled": "Zusätzliche Häfen einfügen: Werte hinzugefügt",
+                "noFileAlert": "Bitte wählen Sie eine Excel-Datei (.xlsx) aus!",
+                "processing": "Verarbeitung...",
+                "complete": "Verarbeitung abgeschlossen, Datei heruntergeladen: ",
+                "invalidDateAlert": "Bitte geben Sie ein gültiges Datum im Format JJJJ.MM.TT ein!",
+                "filterTitle": "Daten filtern",
+                "originReq": "(Erforderlich)",
+                "originSubtitle": "Mehrfachauswahl möglich<br>Mindestens eine auswählen",
+                "destOpt": "(Optional)",
+                "destSubtitle": "Mehrfachauswahl möglich<br>Standardmäßig alles auswählen, wenn nichts gewählt",
+                "rowCount": "Ausgewählte Zeilen: ",
+                "clearSelection": "Auswahl löschen",
+                "downloadFilteredBtn": "Gefilterte Daten herunterladen",
+                "cancelBtn": "Abbrechen",
+                "backBtn": "Zurück zum Hauptbildschirm",
+                "savePortsBtn": "Speichern",
+                "portsUploadLimitAlert": "Die hochgeladene Datei überschreitet 30 Zeilen (ohne Kopfzeile). Nur die ersten 30 Zeilen werden verwendet.",
+                "portsUploadOverwriteConfirm": "Sie haben manuell Werte eingegeben. Das Hochladen einer Datei überschreibt diese. Fortfahren?",
+                "portsFormatError": "Ungültiges Format in Zeile {row}: {value}. Muss 5 Zeichen sein (nur Großbuchstaben oder Zahlen).",
+                "portsInvalidFormatAlert": "Kann nicht speichern, da ein oder mehrere Felder ein ungültiges Format haben. Werte müssen 5 Zeichen sein (nur Großbuchstaben oder Zahlen).",
+                "dateFormatError": "Ungültiges Datum",
+                "dateRangeError": "Ungültiges Datum",
+                "portsUnsavedConfirm": "Sie haben ungespeicherte Änderungen in den From/To-Werten. Möchten Sie wirklich abbrechen?",
+                "ncpeDefaultConfirm": "Dies löscht alle vorhandenen From/To-Werte und wendet NCPE-Standardwerte an. Fortfahren?",
+                "rowLimitAlert": "Die ausgewählten Zeilen überschreiten 500! Bitte reduzieren Sie Ihre Auswahl.",
+                "originAlert": "Bitte wählen Sie mindestens einen Wert aus der 'Origin'-Spalte!",
+                "fileNameEmptyAlert": "Dateiname darf nicht leer sein!"
+            },
+            "el": {
+                "title": "Μορφοποίηση φύλλου μεταφόρτωσης για λήψη VC",
+                "portsBtn": "Εισαγωγή επιπλέον λιμανιών",
+                "clearPortsBtn": "Εκκαθάριση επιπλέον λιμανιών",
+                "downloadBtn": "Άμεση λήψη",
+                "orText": "ή",
+                "filterBtn": "Φιλτράρισμα δεδομένων",
+                "clearAllBtn": "Εκκαθάριση όλων",
+                "fileListTitle": "Ανέβηκε αρχείο:",
+                "portsStatusEmpty": "Εισαγωγή επιπλέον λιμανιών: Δεν έχουν προστεθεί τιμές",
+                "portsStatusFilled": "Εισαγωγή επιπλέον λιμανιών: Έχουν προστεθεί τιμές",
+                "noFileAlert": "Παρακαλώ επιλέξτε ένα αρχείο Excel (.xlsx)!",
+                "processing": "Επεξεργασία...",
+                "complete": "Η επεξεργασία ολοκληρώθηκε, το αρχείο κατέβηκε: ",
+                "invalidDateAlert": "Παρακαλώ εισαγάγετε μια έγκυρη ημερομηνία σε μορφή ΕΕΕΕ.ΜΜ.ΗΗ!",
+                "filterTitle": "Φιλτράρισμα δεδομένων",
+                "originReq": "(Απαιτείται)",
+                "originSubtitle": "Επιτρέπεται πολλαπλή επιλογή<br>Επιλέξτε τουλάχιστον ένα",
+                "destOpt": "(Προαιρετικό)",
+                "destSubtitle": "Επιτρέπεται πολλαπλή επιλογή<br>Επιλογή όλων από προεπιλογή αν δεν επιλεγεί τίποτα",
+                "rowCount": "Επιλεγμένες σειρές: ",
+                "clearSelection": "Εκκαθάριση επιλογής",
+                "downloadFilteredBtn": "Λήψη φιλτραρισμένων δεδομένων",
+                "cancelBtn": "Ακύρωση",
+                "backBtn": "Επιστροφή στην κύρια οθόνη",
+                "savePortsBtn": "Αποθήκευση",
+                "portsUploadLimitAlert": "Το ανεβασμένο αρχείο υπερβαίνει τις 30 σειρές (εκτός κεφαλίδας). Θα χρησιμοποιηθούν μόνο οι πρώτες 30 σειρές。",
+                "portsUploadOverwriteConfirm": "Έχετε εισαγάγει χειροκίνητα τιμές. Η μεταφόρτωση αρχείου θα τις αντικαταστήσει. Συνεχίζετε;",
+                "portsFormatError": "Μη έγκυρη μορφή στη σειρά {row}: {value}. Πρέπει να είναι 5 χαρακτήρες (μόνο κεφαλαία γράμματα ή αριθμοί).",
+                "portsInvalidFormatAlert": "Δεν μπορεί να αποθηκευτεί λόγω μη έγκυρης μορφής σε ένα ή περισσότερα πεδία. Οι τιμές πρέπει να είναι 5 χαρακτήρες (μόνο κεφαλαία γράμματα ή αριθμοί).",
+                "dateFormatError": "Μη έγκυρη ημερομηνία",
+                "dateRangeError": "Μη έγκυρη ημερομηνία",
+                "portsUnsavedConfirm": "Έχετε μη αποθηκευμένες αλλαγές στις τιμές From/To. Είστε σίγουροι ότι θέλετε να ακυρώσετε;",
+                "ncpeDefaultConfirm": "Αυτό θα διαγράψει όλες τις υπάρχουσες τιμές From/To και θα εφαρμόσει τις προεπιλογές NCPE. Συνεχίζετε;",
+                "rowLimitAlert": "Οι επιλεγμένες σειρές υπερβαίνουν τις 500! Παρακαλώ μειώστε την επιλογή σας.",
+                "originAlert": "Παρακαλώ επιλέξτε τουλάχιστον μία τιμή από τη στήλη 'Origin'!",
+                "fileNameEmptyAlert": "Το όνομα του αρχείου δεν μπορεί να είναι κενό!"
+            },
+            "ja": {
+                "title": "VCダウンロード用アップロードシートのフォーマット",
+                "portsBtn": "追加ポートを挿入",
+                "clearPortsBtn": "追加ポートをクリア",
+                "downloadBtn": "直接ダウンロード",
+                "orText": "または",
+                "filterBtn": "データをフィルタリング",
+                "clearAllBtn": "すべてクリア",
+                "fileListTitle": "アップロードされたファイル：",
+                "portsStatusEmpty": "追加ポートの挿入：値が追加されていません",
+                "portsStatusFilled": "追加ポートの挿入：値が追加されました",
+                "noFileAlert": "Excelファイル（.xlsx）を選択してください！",
+                "processing": "処理中...",
+                "complete": "処理が完了しました、ファイルがダウンロードされました：",
+                "invalidDateAlert": "有効な日付をYYYY.MM.DD形式で入力してください！",
+                "filterTitle": "データをフィルタリング",
+                "originReq": "(必須)",
+                "originSubtitle": "複数選択可能<br>少なくとも1つ選択",
+                "destOpt": "(任意)",
+                "destSubtitle": "複数選択可能<br>選択がない場合はデフォルトで全て選択",
+                "rowCount": "選択された行数：",
+                "clearSelection": "選択をクリア",
+                "downloadFilteredBtn": "フィルタリングされたデータをダウンロード",
+                "cancelBtn": "キャンセル",
+                "backBtn": "メイン画面に戻る",
+                "savePortsBtn": "保存",
+                "portsUploadLimitAlert": "アップロードされたファイルが30行（ヘッダーを除く）を超えています。最初の30行のみ使用されます。",
+                "portsUploadOverwriteConfirm": "手動で値を入力しました。ファイルをアップロードするとそれらが上書きされます。続行しますか？",
+                "portsFormatError": "行 {row} の形式が無効です：{value}。5文字（大文字または数字のみ）である必要があります。",
+                "portsInvalidFormatAlert": "1つ以上のフィールドの形式が無効なため保存できません。値は5文字（大文字または数字のみ）である必要があります。",
+                "dateFormatError": "無効な日付",
+                "dateRangeError": "無効な日付",
+                "portsUnsavedConfirm": "From/To値に未保存の変更があります。本当にキャンセルしますか？",
+                "ncpeDefaultConfirm": "これにより既存のすべてのFrom/To値がクリアされ、NCPEデフォルトが適用されます。続行しますか？",
+                "rowLimitAlert": "選択した行数が500を超えています！選択を減らしてください。",
+                "originAlert": "'Origin'列から少なくとも1つの値を選択してください！",
+                "fileNameEmptyAlert": "ファイル名を空にすることはできません！"
+            },
+            "ko": {
+                "title": "VC 다운로드용 업로드 시트 포맷",
+                "portsBtn": "추가 포트 삽입",
+                "clearPortsBtn": "추가 포트 지우기",
+                "downloadBtn": "직접 다운로드",
+                "orText": "또는",
+                "filterBtn": "데이터 필터링",
+                "clearAllBtn": "모두 지우기",
+                "fileListTitle": "업로드된 파일:",
+                "portsStatusEmpty": "추가 포트 삽입: 값이 추가되지 않음",
+                "portsStatusFilled": "추가 포트 삽입: 값이 추가됨",
+                "noFileAlert": "Excel 파일(.xlsx)을 선택하세요!",
+                "processing": "처리 중...",
+                "complete": "처리 완료, 파일 다운로드됨: ",
+                "invalidDateAlert": "유효한 날짜를 YYYY.MM.DD 형식으로 입력하세요!",
+                "filterTitle": "데이터 필터링",
+                "originReq": "(필수)",
+                "originSubtitle": "다중 선택 가능<br>최소 하나 선택",
+                "destOpt": "(선택)",
+                "destSubtitle": "다중 선택 가능<br>선택하지 않으면 기본으로 모두 선택",
+                "rowCount": "선택된 행: ",
+                "clearSelection": "선택 지우기",
+                "downloadFilteredBtn": "필터링된 데이터 다운로드",
+                "cancelBtn": "취소",
+                "backBtn": "메인 화면으로 돌아가기",
+                "savePortsBtn": "저장",
+                "portsUploadLimitAlert": "업로드된 파일이 30행(헤더 제외)을 초과했습니다. 처음 30행만 사용됩니다.",
+                "portsUploadOverwriteConfirm": "수동으로 값을 입력했습니다. 파일을 업로드하면 덮어씌워집니다. 계속하시겠습니까?",
+                "portsFormatError": "{row} 행에서 잘못된 형식: {value}. 5자(대문자 또는 숫자만)여야 합니다.",
+                "portsInvalidFormatAlert": "하나 이상의 필드 형식이 잘못되어 저장할 수 없습니다. 값은 5자(대문자 또는 숫자만)여야 합니다.",
+                "dateFormatError": "잘못된 날짜",
+                "dateRangeError": "잘못된 날짜",
+                "portsUnsavedConfirm": "From/To 값에 저장되지 않은 변경 사항이 있습니다. 정말 취소하시겠습니까?",
+                "ncpeDefaultConfirm": "이렇게 하면 기존의 모든 From/To 값이 지워지고 NCPE 기본값이 적용됩니다. 계속하시겠습니까?",
+                "rowLimitAlert": "선택한 행이 500개를 초과했습니다! 선택을 줄여주세요。",
+                "originAlert": "'Origin' 열에서 최소 하나 이상의 값을 선택하세요!",
+                "fileNameEmptyAlert": "파일 이름을 비울 수 없습니다!"
+            },
+            "ru": {
+                "title": "Форматировать лист загрузки для скачивания VC",
+                "portsBtn": "Вставить дополнительные порты",
+                "clearPortsBtn": "Очистить дополнительные порты",
+                "downloadBtn": "Скачать напрямую",
+                "orText": "или",
+                "filterBtn": "Фильтровать данные",
+                "clearAllBtn": "Очистить все",
+                "fileListTitle": "Загруженный файл:",
+                "portsStatusEmpty": "Вставить дополнительные порты: значения не добавлены",
+                "portsStatusFilled": "Вставить дополнительные порты: значения добавлены",
+                "noFileAlert": "Пожалуйста, выберите файл Excel (.xlsx)!",
+                "processing": "Обработка...",
+                "complete": "Обработка завершена, файл скачан: ",
+                "invalidDateAlert": "Пожалуйста, введите действительную дату в формате ГГГГ.ММ.ДД!",
+                "filterTitle": "Фильтровать данные",
+                "originReq": "(Обязательно)",
+                "originSubtitle": "Разрешено множественный выбор<br>Выберите хотя бы одно",
+                "destOpt": "(Необязательно)",
+                "destSubtitle": "Разрешено множественный выбор<br>По умолчанию выбирается все, если ничего не выбрано",
+                "rowCount": "Выбранные строки: ",
+                "clearSelection": "Очистить выбор",
+                "downloadFilteredBtn": "Скачать отфильтрованные данные",
+                "cancelBtn": "Отмена",
+                "backBtn": "Вернуться на главный экран",
+                "savePortsBtn": "Сохранить",
+                "portsUploadLimitAlert": "Загруженный файл превышает 30 строк (без учета заголовка). Будут использованы только первые 30 строк.",
+                "portsUploadOverwriteConfirm": "Вы ввели значения вручную. Загрузка файла перезапишет их. Продолжить?",
+                "portsFormatError": "Недопустимый формат в строке {row}: {value}. Должно быть 5 символов (только заглавные буквы или цифры).",
+                "portsInvalidFormatAlert": "Невозможно сохранить из-за недопустимого формата в одном или нескольких полях. Значения должны быть 5 символов (только заглавные буквы или цифры).",
+                "dateFormatError": "Недопустимая дата",
+                "dateRangeError": "Недопустимая дата",
+                "portsUnsavedConfirm": "В значениях From/To есть несохраненные изменения. Вы уверены, что хотите отменить?",
+                "ncpeDefaultConfirm": "Это очистит все существующие значения From/To и применит стандартные значения NCPE. Продолжить?",
+                "rowLimitAlert": "Выбранные строки превышают 500! Пожалуйста, уменьшите выбор.",
+                "originAlert": "Пожалуйста, выберите хотя бы одно значение из столбца 'Origin'!",
+                "fileNameEmptyAlert": "Имя файла не может быть пустым!"
             }
         };
 
-        let currentLang = "en";
+        let currentLang = localStorage.getItem('language') || 'en';
         let uploadedFile = null;
         let processedData = null;
         let portsData = Array(30).fill().map(() => ['', '']);
@@ -410,12 +654,20 @@
 
         function changeLanguage() {
             currentLang = document.getElementById('language').value;
+            localStorage.setItem('language', currentLang);
+            applyTranslations();
+        }
+
+        function applyTranslations() {
+            document.getElementById('language').value = currentLang;
+            document.getElementById('title').textContent = translations[currentLang].title;
+            document.getElementById('portsBtn').textContent = translations[currentLang].portsBtn;
+            document.getElementById('clearPortsBtn').textContent = translations[currentLang].clearPortsBtn;
             document.getElementById('downloadBtn').textContent = translations[currentLang].downloadBtn;
             document.getElementById('orText').textContent = translations[currentLang].orText;
             document.getElementById('filterBtn').textContent = translations[currentLang].filterBtn;
-            document.getElementById('portsBtn').textContent = translations[currentLang].portsBtn;
-            document.getElementById('clearPortsBtn').textContent = translations[currentLang].clearPortsBtn;
-            document.getElementById('clearAllBtn').textContent = translations[currentLang].clearBtn;
+            document.getElementById('clearAllBtn').textContent = translations[currentLang].clearAllBtn;
+            document.getElementById('backBtn').textContent = translations[currentLang].backBtn;
             document.getElementById('filterTitle').textContent = translations[currentLang].filterTitle;
             document.getElementById('originReq').textContent = translations[currentLang].originReq;
             document.getElementById('originSubtitle').innerHTML = translations[currentLang].originSubtitle;
@@ -635,7 +887,7 @@
                 let userFileName;
                 do {
                     userFileName = prompt("Please enter the file name for download:", `Processed-${uploadedFile.name}`);
-                    if (userFileName === null) return; // 取消操作
+                    if (userFileName === null) return;
                     if (userFileName.trim() === "") {
                         alert(translations[currentLang].fileNameEmptyAlert);
                     }
@@ -863,7 +1115,7 @@
                 let userFileName;
                 do {
                     userFileName = prompt("Please enter the file name for download:", `Filtered-${uploadedFile.name}`);
-                    if (userFileName === null) return; // 取消操作
+                    if (userFileName === null) return;
                     if (userFileName.trim() === "") {
                         alert(translations[currentLang].fileNameEmptyAlert);
                     }
@@ -881,7 +1133,8 @@
             });
         }
 
-        changeLanguage();
+        // 初始化語言
+        applyTranslations();
     </script>
 </body>
 </html>

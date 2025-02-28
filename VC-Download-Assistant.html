@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VC Download Assistant</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #F5F1E9;
+            color: #2C3E50;
+            text-align: center;
+            padding: 40px;
+            margin: 0;
+        }
+        h1 {
+            color: #8B4513;
+            margin-bottom: 30px;
+        }
+        .container {
+            background-color: #FFFFFF;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+        button {
+            display: block;
+            width: 80%;
+            margin: 15px auto;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: #2C3E50;
+            color: #FFFFFF;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #34495E;
+        }
+        #langSwitch {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        #language {
+            padding: 5px;
+            border-radius: 5px;
+            background-color: #F0E6D2;
+            color: #2C3E50;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="langSwitch">
+            <select id="language" onchange="changeLanguage()">
+                <option value="en">English</option>
+                <option value="zh">繁體中文</option>
+                <option value="de">Deutsch</option>
+                <option value="el">Ελληνικά</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="ru">Русский</option>
+            </select>
+        </div>
+        <h1>VC Download Assistant</h1>
+        <button onclick="window.location.href='Format-Upload-Sheet-for-VC-Download.html'">Format Upload Sheet for VC Download</button>
+        <button onclick="window.location.href='Merge-Cost-Sheets-from-VC-Download.html'">Merge Cost Sheets from VC Download</button>
+    </div>
+
+    <script>
+        // 預設語言為英文，並從 localStorage 載入偏好
+        let currentLang = localStorage.getItem('language') || 'en';
+        document.getElementById('language').value = currentLang;
+
+        function changeLanguage() {
+            currentLang = document.getElementById('language').value;
+            localStorage.setItem('language', currentLang);
+        }
+    </script>
+</body>
+</html>
