@@ -55,7 +55,7 @@
             color: #808080;
             font-size: 16px;
         }
-        button {
+        button, a.download-btn {
             padding: 10px 20px;
             border: none;
             border-radius: 5px;
@@ -64,19 +64,27 @@
             color: #FFFFFF;
             cursor: pointer;
             transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
-        button:hover:not(:disabled) {
+        button:hover:not(:disabled), a.download-btn:hover {
             background-color: #34495E;
         }
         button:disabled {
             background-color: #A9A9A9;
             cursor: not-allowed;
         }
-        #clearAllBtn, #clearSelection, #saveBtn:not(:disabled), #ncpeDefaultBtn, #downloadBtn:not(:disabled), #filterBtn:not(:disabled) {
+        #clearAllBtn, #clearSelection, #saveBtn:not(:disabled), #ncpeDefaultBtn {
             background-color: #8B4513;
         }
-        #clearAllBtn:hover:not(:disabled), #clearSelection:hover:not(:disabled), #saveBtn:hover:not(:disabled), #ncpeDefaultBtn:hover:not(:disabled), #downloadBtn:hover:not(:disabled), #filterBtn:hover:not(:disabled) {
+        #clearAllBtn:hover:not(:disabled), #clearSelection:hover:not(:disabled), #saveBtn:hover:not(:disabled), #ncpeDefaultBtn:hover:not(:disabled) {
             background-color: #A0522D;
+        }
+        #downloadBtn:not(:disabled), #filterBtn:not(:disabled) {
+            background-color: #2C3E50; /* 藍色 */
+        }
+        #downloadBtn:hover:not(:disabled), #filterBtn:hover:not(:disabled) {
+            background-color: #34495E; /* 懸停時的藍色變暗 */
         }
         #clearPortsBtn {
             background-color: #A9A9A9;
@@ -360,6 +368,7 @@
             </div>
             <div class="ports-upload-row">
                 <input type="file" id="portsFile" accept=".xlsx, .xls" onchange="loadPortsFile()">
+                <a href="Upload_Extra_Ports.xlsx" download class="download-btn" id="downloadTemplateBtn">Download Upload Format</a>
                 <button id="saveBtn" onclick="savePorts()">Save</button>
                 <button onclick="closeModal('portsModal')">Cancel</button>
             </div>
@@ -382,6 +391,7 @@
                 "title": "Format Upload Sheet for VC Download",
                 "portsBtn": "Insert Extra Ports",
                 "clearPortsBtn": "Clear Extra Ports",
+                "downloadTemplateBtn": "Download Upload Format",
                 "downloadBtn": "Download Directly",
                 "orText": "or",
                 "filterBtn": "Filter Data",
@@ -420,6 +430,7 @@
                 "title": "格式化上傳表單給 VC 下載",
                 "portsBtn": "插入額外港口",
                 "clearPortsBtn": "清除額外港口",
+                "downloadTemplateBtn": "下載上傳格式",
                 "downloadBtn": "直接下載",
                 "orText": "或",
                 "filterBtn": "篩選數據",
@@ -458,6 +469,7 @@
                 "title": "Upload-Blatt für VC-Download formatieren",
                 "portsBtn": "Zusätzliche Häfen einfügen",
                 "clearPortsBtn": "Zusätzliche Häfen löschen",
+                "downloadTemplateBtn": "Upload-Format herunterladen",
                 "downloadBtn": "Direkt herunterladen",
                 "orText": "oder",
                 "filterBtn": "Daten filtern",
@@ -480,7 +492,7 @@
                 "cancelBtn": "Abbrechen",
                 "backBtn": "Zurück zum Hauptbildschirm",
                 "savePortsBtn": "Speichern",
-                "portsUploadLimitAlert": "Die hochgeladene Datei überschreitet 30 Zeilen (ohne Kopfzeile). Nur die ersten 30 Zeilen werden verwendet.",
+                "portsUploadLimitAlert": "Die hochgeladene Datei überschreitet 30 Zeilen (ohne Kopfzeile). Nur die ersten 30 Zeilen werden verwendet。",
                 "portsUploadOverwriteConfirm": "Sie haben manuell Werte eingegeben. Das Hochladen einer Datei überschreibt diese. Fortfahren?",
                 "portsFormatError": "Ungültiges Format in Zeile {row}: {value}. Muss 5 Zeichen sein (nur Großbuchstaben oder Zahlen).",
                 "portsInvalidFormatAlert": "Kann nicht speichern, da ein oder mehrere Felder ein ungültiges Format haben. Werte müssen 5 Zeichen sein (nur Großbuchstaben oder Zahlen).",
@@ -488,7 +500,7 @@
                 "dateRangeError": "Ungültiges Datum",
                 "portsUnsavedConfirm": "Sie haben ungespeicherte Änderungen in den From/To-Werten. Möchten Sie wirklich abbrechen?",
                 "ncpeDefaultConfirm": "Dies löscht alle vorhandenen From/To-Werte und wendet NCPE-Standardwerte an. Fortfahren?",
-                "rowLimitAlert": "Die ausgewählten Zeilen überschreiten 500! Bitte reduzieren Sie Ihre Auswahl.",
+                "rowLimitAlert": "Die ausgewählten Zeilen überschreiten 500! Bitte reduzieren Sie Ihre Auswahl。",
                 "originAlert": "Bitte wählen Sie mindestens einen Wert aus der 'Origin'-Spalte!",
                 "fileNameEmptyAlert": "Dateiname darf nicht leer sein!"
             },
@@ -496,6 +508,7 @@
                 "title": "Μορφοποίηση φύλλου μεταφόρτωσης για λήψη VC",
                 "portsBtn": "Εισαγωγή επιπλέον λιμανιών",
                 "clearPortsBtn": "Εκκαθάριση επιπλέον λιμανιών",
+                "downloadTemplateBtn": "Λήψη μορφής μεταφόρτωσης",
                 "downloadBtn": "Άμεση λήψη",
                 "orText": "ή",
                 "filterBtn": "Φιλτράρισμα δεδομένων",
@@ -526,7 +539,7 @@
                 "dateRangeError": "Μη έγκυρη ημερομηνία",
                 "portsUnsavedConfirm": "Έχετε μη αποθηκευμένες αλλαγές στις τιμές From/To. Είστε σίγουροι ότι θέλετε να ακυρώσετε;",
                 "ncpeDefaultConfirm": "Αυτό θα διαγράψει όλες τις υπάρχουσες τιμές From/To και θα εφαρμόσει τις προεπιλογές NCPE. Συνεχίζετε;",
-                "rowLimitAlert": "Οι επιλεγμένες σειρές υπερβαίνουν τις 500! Παρακαλώ μειώστε την επιλογή σας.",
+                "rowLimitAlert": "Οι επιλεγμένες σειρές υπερβαίνουν τις 500! Παρακαλώ μειώστε την επιλογή σας。",
                 "originAlert": "Παρακαλώ επιλέξτε τουλάχιστον μία τιμή από τη στήλη 'Origin'!",
                 "fileNameEmptyAlert": "Το όνομα του αρχείου δεν μπορεί να είναι κενό!"
             },
@@ -534,6 +547,7 @@
                 "title": "VCダウンロード用アップロードシートのフォーマット",
                 "portsBtn": "追加ポートを挿入",
                 "clearPortsBtn": "追加ポートをクリア",
+                "downloadTemplateBtn": "アップロード形式をダウンロード",
                 "downloadBtn": "直接ダウンロード",
                 "orText": "または",
                 "filterBtn": "データをフィルタリング",
@@ -572,6 +586,7 @@
                 "title": "VC 다운로드용 업로드 시트 포맷",
                 "portsBtn": "추가 포트 삽입",
                 "clearPortsBtn": "추가 포트 지우기",
+                "downloadTemplateBtn": "업로드 형식 다운로드",
                 "downloadBtn": "직접 다운로드",
                 "orText": "또는",
                 "filterBtn": "데이터 필터링",
@@ -594,10 +609,10 @@
                 "cancelBtn": "취소",
                 "backBtn": "메인 화면으로 돌아가기",
                 "savePortsBtn": "저장",
-                "portsUploadLimitAlert": "업로드된 파일이 30행(헤더 제외)을 초과했습니다. 처음 30행만 사용됩니다.",
+                "portsUploadLimitAlert": "업로드된 파일이 30행(헤더 제외)을 초과했습니다. 처음 30행만 사용됩니다。",
                 "portsUploadOverwriteConfirm": "수동으로 값을 입력했습니다. 파일을 업로드하면 덮어씌워집니다. 계속하시겠습니까?",
-                "portsFormatError": "{row} 행에서 잘못된 형식: {value}. 5자(대문자 또는 숫자만)여야 합니다.",
-                "portsInvalidFormatAlert": "하나 이상의 필드 형식이 잘못되어 저장할 수 없습니다. 값은 5자(대문자 또는 숫자만)여야 합니다.",
+                "portsFormatError": "{row} 행에서 잘못된 형식: {value}. 5자(대문자 또는 숫자만)여야 합니다。",
+                "portsInvalidFormatAlert": "하나 이상의 필드 형식이 잘못되어 저장할 수 없습니다. 값은 5자(대문자 또는 숫자만)여야 합니다。",
                 "dateFormatError": "잘못된 날짜",
                 "dateRangeError": "잘못된 날짜",
                 "portsUnsavedConfirm": "From/To 값에 저장되지 않은 변경 사항이 있습니다. 정말 취소하시겠습니까?",
@@ -610,6 +625,7 @@
                 "title": "Форматировать лист загрузки для скачивания VC",
                 "portsBtn": "Вставить дополнительные порты",
                 "clearPortsBtn": "Очистить дополнительные порты",
+                "downloadTemplateBtn": "Скачать формат загрузки",
                 "downloadBtn": "Скачать напрямую",
                 "orText": "или",
                 "filterBtn": "Фильтровать данные",
@@ -632,7 +648,7 @@
                 "cancelBtn": "Отмена",
                 "backBtn": "Вернуться на главный экран",
                 "savePortsBtn": "Сохранить",
-                "portsUploadLimitAlert": "Загруженный файл превышает 30 строк (без учета заголовка). Будут использованы только первые 30 строк.",
+                "portsUploadLimitAlert": "Загруженный файл превышает 30 строк (без учета заголовка). Будут использованы только первые 30 строк。",
                 "portsUploadOverwriteConfirm": "Вы ввели значения вручную. Загрузка файла перезапишет их. Продолжить?",
                 "portsFormatError": "Недопустимый формат в строке {row}: {value}. Должно быть 5 символов (только заглавные буквы или цифры).",
                 "portsInvalidFormatAlert": "Невозможно сохранить из-за недопустимого формата в одном или нескольких полях. Значения должны быть 5 символов (только заглавные буквы или цифры).",
@@ -640,7 +656,7 @@
                 "dateRangeError": "Недопустимая дата",
                 "portsUnsavedConfirm": "В значениях From/To есть несохраненные изменения. Вы уверены, что хотите отменить?",
                 "ncpeDefaultConfirm": "Это очистит все существующие значения From/To и применит стандартные значения NCPE. Продолжить?",
-                "rowLimitAlert": "Выбранные строки превышают 500! Пожалуйста, уменьшите выбор.",
+                "rowLimitAlert": "Выбранные строки превышают 500! Пожалуйста, уменьшите выбор。",
                 "originAlert": "Пожалуйста, выберите хотя бы одно значение из столбца 'Origin'!",
                 "fileNameEmptyAlert": "Имя файла не может быть пустым!"
             }
@@ -663,6 +679,7 @@
             document.getElementById('title').textContent = translations[currentLang].title;
             document.getElementById('portsBtn').textContent = translations[currentLang].portsBtn;
             document.getElementById('clearPortsBtn').textContent = translations[currentLang].clearPortsBtn;
+            document.getElementById('downloadTemplateBtn').textContent = translations[currentLang].downloadTemplateBtn;
             document.getElementById('downloadBtn').textContent = translations[currentLang].downloadBtn;
             document.getElementById('orText').textContent = translations[currentLang].orText;
             document.getElementById('filterBtn').textContent = translations[currentLang].filterBtn;
