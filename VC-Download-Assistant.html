@@ -16,6 +16,10 @@
             color: #8B4513;
             margin-bottom: 30px;
         }
+        h2 {
+            color: #2C3E50;
+            margin-bottom: 20px;
+        }
         .container {
             background-color: #FFFFFF;
             border-radius: 10px;
@@ -69,11 +73,36 @@
             </select>
         </div>
         <h1>VC Download Assistant</h1>
+        <h2 id="selectPrompt">Please Select a Function</h2>
         <button onclick="window.location.href='Format-Upload-Sheet-for-VC-Download.html'">Format Upload Sheet for VC Download</button>
         <button onclick="window.location.href='Merge-Cost-Sheets-from-VC-Download.html'">Merge Cost Sheets from VC Download</button>
     </div>
 
     <script>
+        const translations = {
+            "en": {
+                "selectPrompt": "Please Select a Function"
+            },
+            "zh": {
+                "selectPrompt": "請選擇功能"
+            },
+            "de": {
+                "selectPrompt": "Bitte wählen Sie eine Funktion"
+            },
+            "el": {
+                "selectPrompt": "Παρακαλώ επιλέξτε μια λειτουργία"
+            },
+            "ja": {
+                "selectPrompt": "機能を選択してください"
+            },
+            "ko": {
+                "selectPrompt": "기능을 선택하세요"
+            },
+            "ru": {
+                "selectPrompt": "Пожалуйста, выберите функцию"
+            }
+        };
+
         // 預設語言為英文，並從 localStorage 載入偏好
         let currentLang = localStorage.getItem('language') || 'en';
         document.getElementById('language').value = currentLang;
@@ -81,7 +110,15 @@
         function changeLanguage() {
             currentLang = document.getElementById('language').value;
             localStorage.setItem('language', currentLang);
+            applyTranslations();
         }
+
+        function applyTranslations() {
+            document.getElementById('selectPrompt').textContent = translations[currentLang].selectPrompt;
+        }
+
+        // 初始化語言
+        applyTranslations();
     </script>
 </body>
 </html>
